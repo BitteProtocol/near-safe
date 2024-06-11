@@ -81,7 +81,8 @@ async function sendUserOperation(userOp: unknown, entryPoint: string) {
 }
 
 async function main() {
-  const provider = new ethers.JsonRpcProvider("https://rpc2.sepolia.org");
+  const provider = new ethers.JsonRpcProvider("https://rpc.sepolia.org");
+
   const safeDeployment = (fn: DeploymentFunction) =>
     getDeployment(fn, { provider, version: "1.4.1" });
   const m4337Deployment = (fn: DeploymentFunction) =>
@@ -124,6 +125,7 @@ async function main() {
       SAFE_SALT_NONCE,
     );
   console.log("Safe Address:", safeAddress);
+
   const safeNotDeployed = (await provider.getCode(safeAddress)) === "0x";
   const { maxPriorityFeePerGas, maxFeePerGas } = await provider.getFeeData();
   if (!maxPriorityFeePerGas || !maxFeePerGas) {
@@ -184,11 +186,12 @@ async function main() {
   console.log(safeOpHash);
 
   const signature = await getNearSignature(nearAdapter, safeOpHash);
-  let response = await sendUserOperation(
-    { ...unsignedUserOp, signature },
-    await contracts.entryPoint.getAddress(),
+  console.log(
+    await sendUserOperation(
+      { ...unsignedUserOp, signature },
+      await contracts.entryPoint.getAddress(),
+    ),
   );
-  console.log(response);
 }
 
 main().catch((err) => {
