@@ -1,0 +1,18 @@
+{
+  "name": "nearly-safe",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "start": "ts-node index.ts",
+    "fmt": "prettier -w ."
+  },
+  "dependencies": {
+    "ethers": "^6.13.0",
+    "near-ca": "^0.0.9"
+  },
+  "devDependencies": {
+    "prettier": "^3.3.2",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.4.5"
+  }
+}
