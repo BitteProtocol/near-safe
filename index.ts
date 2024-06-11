@@ -11,9 +11,10 @@ import {
 } from "@safe-global/safe-modules-deployments";
 import dotenv from "dotenv";
 import { ethers } from "ethers";
+import { NearEthAdapter, MultichainContract } from "near-ca";
 
 dotenv.config();
-const { NEAR_EVM_ADDRESS, SAFE_SALT_NONCE, ERC4337_BUNDLER_URL } = process.env;
+const { SAFE_SALT_NONCE, ERC4337_BUNDLER_URL } = process.env;
 
 type DeploymentFunction = (filter?: {
   version: string;
@@ -40,10 +41,19 @@ async function getDeployment(
   );
 }
 
-async function getNearSignature(hash: ethers.BytesLike) {
-  // TODO(bh2smith): do your thing
-  //assert(ethers.recoverAddress(hash, "0x...") === NEAR_EVM_ADDRESS);
-  return ethers.solidityPacked(["uint256", "uint256", "uint8"], [1, 2, 27]);
+async function getNearSignature(
+  adapter: NearEthAdapter,
+  hash: ethers.BytesLike,
+): Promise<`0x${string}`> {
+  const viemHash = typeof hash === "string" ? (hash as `0x${string}`) : hash;
+  // MPC Contract produces two possible signatures.
+  const signatures = await adapter.sign(viemHash);
+  for (const sig of signatures) {
+    if (ethers.recoverAddress(hash, sig) === adapter.address) {
+      return sig;
+    }
+  }
+  throw new Error("Invalid signature!");
 }
 
 async function sendUserOperation(userOp: unknown, entryPoint: string) {
@@ -71,8 +81,7 @@ async function sendUserOperation(userOp: unknown, entryPoint: string) {
 }
 
 async function main() {
-  const provider = new ethers.JsonRpcProvider("https://rpc.sepolia.org");
-
+  const provider = new ethers.JsonRpcProvider("https://rpc2.sepolia.org");
   const safeDeployment = (fn: DeploymentFunction) =>
     getDeployment(fn, { provider, version: "1.4.1" });
   const m4337Deployment = (fn: DeploymentFunction) =>
@@ -89,10 +98,14 @@ async function main() {
     ),
   };
 
+  const nearAdapter = await NearEthAdapter.fromConfig({
+    mpcContract: await MultichainContract.fromEnv(),
+  });
+
   const setup = await contracts.singleton.interface.encodeFunctionData(
     "setup",
     [
-      [NEAR_EVM_ADDRESS],
+      [nearAdapter.address],
       1,
       contracts.moduleSetup.target,
       contracts.moduleSetup.interface.encodeFunctionData("enableModules", [
@@ -110,7 +123,7 @@ async function main() {
       setup,
       SAFE_SALT_NONCE,
     );
-
+  console.log("Safe Address:", safeAddress);
   const safeNotDeployed = (await provider.getCode(safeAddress)) === "0x";
   const { maxPriorityFeePerGas, maxFeePerGas } = await provider.getFeeData();
   if (!maxPriorityFeePerGas || !maxFeePerGas) {
@@ -170,13 +183,12 @@ async function main() {
   });
   console.log(safeOpHash);
 
-  const signature = await getNearSignature(safeOpHash);
-  console.log(
-    await sendUserOperation(
-      { ...unsignedUserOp, signature },
-      await contracts.entryPoint.getAddress(),
-    ),
+  const signature = await getNearSignature(nearAdapter, safeOpHash);
+  let response = await sendUserOperation(
+    { ...unsignedUserOp, signature },
+    await contracts.entryPoint.getAddress(),
   );
+  console.log(response);
 }
 
 main().catch((err) => {
