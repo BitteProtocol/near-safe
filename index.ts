@@ -60,7 +60,7 @@ async function getNearSignature(
 }
 
 async function sendUserOperation(userOp: unknown, entryPoint: string) {
-  const response = await fetch(ERC4337_BUNDLER_URL!, {
+  const requestPayload = {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -71,14 +71,16 @@ async function sendUserOperation(userOp: unknown, entryPoint: string) {
       id: 4337,
       params: [userOp, entryPoint],
     }),
-  });
+  };
+  console.log("Request Body", requestPayload.body);
+  const response = await fetch(ERC4337_BUNDLER_URL!, requestPayload);
   const body = await response.text();
   if (!response.ok) {
     throw new Error(`Failed to send user op ${body}`);
   }
   const json = JSON.parse(body);
   if (json.error) {
-    throw new Error(json.error.message ?? JSON.stringify(json.error));
+    throw new Error(JSON.stringify(json.error));
   }
   return json.result;
 }
@@ -96,7 +98,8 @@ async function main() {
     m4337: await m4337Deployment(getSafe4337ModuleDeployment),
     moduleSetup: await m4337Deployment(getSafeModuleSetupDeployment),
     entryPoint: new ethers.Contract(
-      "0x0000000071727De22E5E9d8BAf0edAc6f37da032",
+      // "0x0000000071727De22E5E9d8BAf0edAc6f37da032",
+      "0x5ff137d4b0fdcd49dca30c7cf57e578a026d2789",
       [`function getNonce(address, uint192 key) view returns (uint256 nonce)`],
       provider,
     ),
@@ -153,9 +156,9 @@ async function main() {
       "0x",
       0,
     ]),
-    verificationGasLimit: ethers.toBeHex(safeNotDeployed ? 500000 : 100000),
-    callGasLimit: ethers.toBeHex(100000),
-    preVerificationGas: ethers.toBeHex(100000),
+    verificationGasLimit: ethers.toBeHex(safeNotDeployed ? 1_000_000 : 200_000),
+    callGasLimit: ethers.toBeHex(200_000),
+    preVerificationGas: ethers.toBeHex(200_000),
     maxPriorityFeePerGas: ethers.toBeHex((maxPriorityFeePerGas * 13n) / 10n),
     maxFeePerGas: ethers.toBeHex(maxFeePerGas),
     // TODO(bh2smith): Use paymaster at some point
@@ -188,13 +191,69 @@ async function main() {
   });
   console.log(safeOpHash);
 
+  // const signature =
+  //   "0xef028109f94aabaf9cd4fb7f2cce311527567341d3439a40fe15e6e01c45249b790e5e5c1f0803f668219f97a95947a982e4f88d8f9abc675adcdb926ed7504d1c";
   const signature = await getNearSignature(nearAdapter, safeOpHash);
   console.log(
     await sendUserOperation(
-      { ...unsignedUserOp, signature },
+      asERC4337Payload({ ...unsignedUserOp, signature }),
       await contracts.entryPoint.getAddress(),
     ),
   );
+}
+
+interface UserOpData {
+  sender: string;
+  nonce: string;
+  factory?: string | ethers.Addressable;
+  factoryData?: string | ethers.Addressable;
+  callData: string;
+  verificationGasLimit: string;
+  callGasLimit: string;
+  preVerificationGas: string;
+  maxPriorityFeePerGas: string;
+  maxFeePerGas: string;
+  signature: string;
+}
+
+interface SendUserOpPayload {
+  sender: string;
+  nonce: string;
+  initCode: string;
+  callData: string;
+  maxFeePerGas: string;
+  maxPriorityFeePerGas: string;
+  verificationGasLimit: string;
+  callGasLimit: string;
+  preVerificationGas: string;
+  paymasterAndData: string;
+  signature: string;
+}
+
+function asERC4337Payload(input: UserOpData): SendUserOpPayload {
+  let initCode: string;
+  if (input.factory && input.factoryData) {
+    initCode = input.factory
+      .toString()
+      .concat(input.factoryData.toString().slice(2));
+  } else if (input.factory || input.factoryData) {
+    throw new Error("Must have both or neither (factory, factoryData)");
+  } else {
+    initCode = "0x";
+  }
+  return {
+    sender: input.sender,
+    nonce: input.nonce,
+    initCode,
+    callData: input.callData,
+    maxFeePerGas: input.maxFeePerGas,
+    maxPriorityFeePerGas: input.maxPriorityFeePerGas,
+    verificationGasLimit: input.verificationGasLimit,
+    callGasLimit: input.callGasLimit,
+    preVerificationGas: input.preVerificationGas,
+    paymasterAndData: "0x", // Setting default value for paymasterAndData
+    signature: input.signature,
+  };
 }
 
 main().catch((err) => {
