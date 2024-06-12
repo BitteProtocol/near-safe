@@ -11,7 +11,7 @@
     "@safe-global/safe-modules-deployments": "^2.1.1",
     "dotenv": "^16.4.5",
     "ethers": "^6.13.0",
-    "near-ca": "^0.0.9"
+    "near-ca": "^0.0.10-alpha.1"
   },
   "devDependencies": {
     "@types/node": "^20.14.2",

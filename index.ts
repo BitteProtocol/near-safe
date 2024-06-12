@@ -49,7 +49,10 @@ async function getNearSignature(
   // MPC Contract produces two possible signatures.
   const signatures = await adapter.sign(viemHash);
   for (const sig of signatures) {
-    if (ethers.recoverAddress(hash, sig) === adapter.address) {
+    if (
+      ethers.recoverAddress(hash, sig).toLocaleLowerCase() ===
+      adapter.address.toLocaleLowerCase()
+    ) {
       return sig;
     }
   }
