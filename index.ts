@@ -185,7 +185,10 @@ async function main() {
   });
   console.log(safeOpHash);
 
-  const signature = await getNearSignature(nearAdapter, safeOpHash);
+  const signature = ethers.solidityPacked(
+    ["uint48", "uint48", "bytes"],
+    [0, 0, await getNearSignature(nearAdapter, safeOpHash)],
+  );
   console.log(
     await sendUserOperation(
       { ...unsignedUserOp, signature },
