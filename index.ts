@@ -77,8 +77,7 @@ async function sendUserOperation(userOp: UserOperation, entryPoint: string) {
   if (json.error) {
     throw new Error(JSON.stringify(json.error));
   }
-  // TODO - this is not the transaction receipt!
-  //  It is the `userOpHash`
+  // This does not contain a transaction receipt! It is the `userOpHash`
   return json.result;
 }
 
