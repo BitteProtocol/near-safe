@@ -105,6 +105,44 @@ async function getUserOpReceipt(userOpHash: string) {
   return json.result;
 }
 
+interface ContractSuite {
+  singleton: ethers.Contract;
+  proxyFactory: ethers.Contract;
+  m4337: ethers.Contract;
+  moduleSetup: ethers.Contract;
+  entryPoint: ethers.Contract;
+}
+
+async function getSafeAddressForSetup(
+  contracts: ContractSuite,
+  setup: ethers.BytesLike,
+  saltNonce?: string,
+): Promise<ethers.AddressLike> {
+  // bytes32 salt = keccak256(abi.encodePacked(keccak256(initializer), saltNonce));
+  // cf: https://github.com/safe-global/safe-smart-account/blob/499b17ad0191b575fcadc5cb5b8e3faeae5391ae/contracts/proxies/SafeProxyFactory.sol#L58
+  const salt = ethers.keccak256(
+    ethers.solidityPacked(
+      ["bytes32", "uint256"],
+      [ethers.keccak256(setup), saltNonce || 0],
+    ),
+  );
+
+  // abi.encodePacked(type(SafeProxy).creationCode, uint256(uint160(_singleton)));
+  // cf: https://github.com/safe-global/safe-smart-account/blob/499b17ad0191b575fcadc5cb5b8e3faeae5391ae/contracts/proxies/SafeProxyFactory.sol#L29
+  const initCode = ethers.solidityPacked(
+    ["bytes", "uint256"],
+    [
+      await contracts.proxyFactory.proxyCreationCode(),
+      await contracts.singleton.getAddress(),
+    ],
+  );
+  return ethers.getCreate2Address(
+    await contracts.proxyFactory.getAddress(),
+    salt,
+    ethers.keccak256(initCode),
+  );
+}
+
 async function main() {
   const provider = new ethers.JsonRpcProvider(ETH_RPC);
   const nearAdapter = await NearEthAdapter.fromConfig({
@@ -131,6 +169,7 @@ async function main() {
       provider,
     ),
   };
+  console.log("Proxy Factory", await contracts.proxyFactory.getAddress());
 
   const setup = await contracts.singleton.interface.encodeFunctionData(
     "setup",
@@ -147,20 +186,11 @@ async function main() {
       ethers.ZeroAddress,
     ],
   );
-  let safeAddress: ethers.AddressLike;
-  try {
-    safeAddress = await contracts.proxyFactory.createProxyWithNonce.staticCall(
-      contracts.singleton,
-      setup,
-      SAFE_SALT_NONCE,
-    );
-  } catch (err: unknown) {
-    // TODO(bh2smith) - use // ethers.getCreate2Address(_from, _salt, _initCodeHash)
-    // Alternative (cheat) is to use safe tx api:
-    // https://safe-transaction-sepolia.safe.global/api/v1/owners/${nearAdapter.address}/safes/
-    // but this is not necessarily unique!
-    safeAddress = "0xDcf56F5a8Cc380f63b6396Dbddd0aE9fa605BeeE";
-  }
+  const safeAddress = await getSafeAddressForSetup(
+    contracts,
+    setup,
+    SAFE_SALT_NONCE,
+  );
   console.log("Safe Address:", safeAddress);
   const safeNotDeployed = (await provider.getCode(safeAddress)) === "0x";
   const { maxPriorityFeePerGas, maxFeePerGas } = await provider.getFeeData();
@@ -183,7 +213,7 @@ async function main() {
     callData: contracts.m4337.interface.encodeFunctionData("executeUserOp", [
       nearAdapter.address,
       1n, // 1 wei
-      "0x626832736d6974682077757a20686572652c207369676e696e672066726f6d204e656172", // bh2smith wuz here, signing from Near
+      ethers.hexlify(ethers.toUtf8Bytes("https://github.com/bh2smith/nearly-safe")),
       0,
     ]),
     verificationGasLimit: ethers.toBeHex(safeNotDeployed ? 500000 : 100000),
