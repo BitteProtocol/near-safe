@@ -640,6 +640,13 @@
   resolved "https://registry.yarnpkg.com/@types/node/-/node-18.15.13.tgz#f64277c341150c979e42b00e4ac289290c9df469"
   integrity sha512-N+0kuo9KgrUQ1Sn/ifDXsvg0TTleP7rIy4zOBGECxAljqvqfqpTfzx0Q1NUedOixRMBfe2Whhb056a42cWs26Q==
 
+"@types/node@^20.14.2":
+  version "20.14.2"
+  resolved "https://registry.yarnpkg.com/@types/node/-/node-20.14.2.tgz#a5f4d2bcb4b6a87bffcaa717718c5a0f208f4a18"
+  integrity sha512-xyu6WAMVwv6AKFLB+e/7ySZVr/0zLCzOa7rSpq6jNwpqOrUbcACDWC+53d4n2QHOnDou0fbIsg8wZu/sxrnI4Q==
+  dependencies:
+    undici-types "~5.26.4"
+
 "@walletconnect/auth-client@2.1.2":
   version "2.1.2"
   resolved "https://registry.yarnpkg.com/@walletconnect/auth-client/-/auth-client-2.1.2.tgz#cee304fb0cdca76f6bf4aafac96ef9301862a7e8"
@@ -1544,16 +1551,16 @@ near-api-js@^3.0.3:
     near-abi "0.1.1"
     node-fetch "2.6.7"
 
-near-ca@^0.0.9:
-  version "0.0.9"
-  resolved "https://registry.yarnpkg.com/near-ca/-/near-ca-0.0.9.tgz#1bb6e36203af1957b1dfd646cccb6bcd2349edfe"
-  integrity sha512-7gGxWAUI/DfzbYzBtTW+e5V6gtyomarDBK+XL6aGiQ7/EGwt0Kpqx5/0uGqbNS20GS7tvRH2UrZm5dLzz0SPfw==
+near-ca@^0.0.10-alpha.1:
+  version "0.0.10-alpha.1"
+  resolved "https://registry.yarnpkg.com/near-ca/-/near-ca-0.0.10-alpha.1.tgz#d5a06fa1e5208484798bbaf2fdaa218c1b9d4dc4"
+  integrity sha512-M2mA3pPBshJJfWh1icFssNiUwao+hZk0ePXoAjFbXtxBZ60mP+QqGw5DtoVNWCj1w0GhzNNnA2KooJZOI0At3Q==
   dependencies:
     "@near-wallet-selector/core" "^8.9.5"
     "@walletconnect/web3wallet" "^1.12.0"
     elliptic "^6.5.5"
     near-api-js "^3.0.3"
-    viem "^2.10.8"
+    viem "^2.12.5"
 
 node-addon-api@^7.0.0:
   version "7.1.0"
@@ -1946,6 +1953,11 @@ uncrypto@^0.1.3:
   resolved "https://registry.yarnpkg.com/uncrypto/-/uncrypto-0.1.3.tgz#e1288d609226f2d02d8d69ee861fa20d8348ef2b"
   integrity sha512-Ql87qFHB3s/De2ClA9e0gsnS6zXG27SkTiSJwjCc9MebbfapQfuPzumMIUMi38ezPZVNFcHI9sUIepeQfw8J8Q==
 
+undici-types@~5.26.4:
+  version "5.26.5"
+  resolved "https://registry.yarnpkg.com/undici-types/-/undici-types-5.26.5.tgz#bcd539893d00b56e964fd2657a4866b221a65617"
+  integrity sha512-JlCMO+ehdEIKqlFxk6IfVoAUVmgz7cU7zD/h9XZ0qzeosSHmUJVOzSQvvYSYWXkFXC+IfLKSIffhv0sVZup6pA==
+
 unenv@^1.9.0:
   version "1.9.0"
   resolved "https://registry.yarnpkg.com/unenv/-/unenv-1.9.0.tgz#469502ae85be1bd3a6aa60f810972b1a904ca312"
@@ -2009,7 +2021,7 @@ v8-compile-cache-lib@^3.0.1:
   resolved "https://registry.yarnpkg.com/v8-compile-cache-lib/-/v8-compile-cache-lib-3.0.1.tgz#6336e8d71965cb3d35a1bbb7868445a7c05264bf"
   integrity sha512-wa7YjyUGfNZngI/vtK0UHAN+lgDCxBPCylVXGp0zu59Fz5aiGtNXaq3DhIov063MorB+VfufLh3JlF2KdTK3xg==
 
-viem@^2.10.8:
+viem@^2.12.5:
   version "2.13.8"
   resolved "https://registry.yarnpkg.com/viem/-/viem-2.13.8.tgz#d6aaeecc84e5ee5cac1566f103ed4cf0335ef811"
   integrity sha512-JX8dOrCJKazNVs7YAahXnX+NANp0nlK16GyYjtQXILnar1daCPsLy4uzKgZDBVBD6DdRP2lsbPfo4X7QX3q5EQ==
