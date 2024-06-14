@@ -243,8 +243,8 @@ async function main() {
 interface UserOperation {
   sender: ethers.AddressLike;
   nonce: string;
-  factory?: string | ethers.Addressable;
-  factoryData?: string | ethers.Addressable;
+  factory?: ethers.AddressLike;
+  factoryData?: ethers.BytesLike;
   callData: string;
   verificationGasLimit: string;
   callGasLimit: string;
