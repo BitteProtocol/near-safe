@@ -105,14 +105,6 @@ async function getUserOpReceipt(userOpHash: string) {
   return json.result;
 }
 
-interface ContractSuite {
-  singleton: ethers.Contract;
-  proxyFactory: ethers.Contract;
-  m4337: ethers.Contract;
-  moduleSetup: ethers.Contract;
-  entryPoint: ethers.Contract;
-}
-
 async function getSafeAddressForSetup(
   contracts: ContractSuite,
   setup: ethers.BytesLike,
@@ -169,7 +161,6 @@ async function main() {
       provider,
     ),
   };
-  console.log("Proxy Factory", await contracts.proxyFactory.getAddress());
 
   const setup = await contracts.singleton.interface.encodeFunctionData(
     "setup",
@@ -193,6 +184,9 @@ async function main() {
   );
   console.log("Safe Address:", safeAddress);
   const safeNotDeployed = (await provider.getCode(safeAddress)) === "0x";
+  // TODO(bh2smith) Use Bundler Gas Data Feed:
+  // Error: maxPriorityFeePerGas must be at least 330687958 (current maxPriorityFeePerGas: 328006616)
+  // - use pimlico_getUserOperationGasPrice to get the current gas price
   const { maxPriorityFeePerGas, maxFeePerGas } = await provider.getFeeData();
   if (!maxPriorityFeePerGas || !maxFeePerGas) {
     throw new Error("no gas fee data");
@@ -213,13 +207,15 @@ async function main() {
     callData: contracts.m4337.interface.encodeFunctionData("executeUserOp", [
       nearAdapter.address,
       1n, // 1 wei
-      ethers.hexlify(ethers.toUtf8Bytes("https://github.com/bh2smith/nearly-safe")),
+      ethers.hexlify(
+        ethers.toUtf8Bytes("https://github.com/bh2smith/nearly-safe"),
+      ),
       0,
     ]),
     verificationGasLimit: ethers.toBeHex(safeNotDeployed ? 500000 : 100000),
     callGasLimit: ethers.toBeHex(100000),
     preVerificationGas: ethers.toBeHex(100000),
-    maxPriorityFeePerGas: ethers.toBeHex((maxPriorityFeePerGas * 13n) / 10n),
+    maxPriorityFeePerGas: ethers.toBeHex((maxPriorityFeePerGas * 15n) / 10n),
     maxFeePerGas: ethers.toBeHex(maxFeePerGas),
     // TODO(bh2smith): Use paymaster at some point
     //paymaster: paymasterAddress,
@@ -281,6 +277,17 @@ interface UserOperation {
   maxPriorityFeePerGas: string;
   maxFeePerGas: string;
   signature: string;
+}
+
+/**
+ * All contracts used in account creation & execution
+ */
+interface ContractSuite {
+  singleton: ethers.Contract;
+  proxyFactory: ethers.Contract;
+  m4337: ethers.Contract;
+  moduleSetup: ethers.Contract;
+  entryPoint: ethers.Contract;
 }
 
 main().catch((err) => {
