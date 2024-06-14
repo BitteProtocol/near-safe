@@ -11,7 +11,8 @@ import { ethers } from "ethers";
 import { NearEthAdapter, MultichainContract } from "near-ca";
 
 dotenv.config();
-const { SAFE_SALT_NONCE, ERC4337_BUNDLER_URL, ENTRY_POINT_V7 } = process.env;
+const { SAFE_SALT_NONCE, ERC4337_BUNDLER_URL, ENTRY_POINT_V7, ETH_RPC } =
+  process.env;
 
 type DeploymentFunction = (filter?: {
   version: string;
@@ -77,11 +78,43 @@ async function sendUserOperation(userOp: UserOperation, entryPoint: string) {
   if (json.error) {
     throw new Error(JSON.stringify(json.error));
   }
+  // TODO - this is not the transaction receipt!
+  //  It is the `userOpHash`
+  return json.result;
+}
+
+async function getUserOpReceipt(userOpHash: string) {
+  const response = await fetch(ERC4337_BUNDLER_URL!, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      jsonrpc: "2.0",
+      method: "eth_getUserOperationReceipt",
+      id: 4337,
+      params: [userOpHash],
+    }),
+  });
+  const body = await response.text();
+  if (!response.ok) {
+    throw new Error(`Failed to send user op ${body}`);
+  }
+  const json = JSON.parse(body);
+  if (json.error) {
+    throw new Error(JSON.stringify(json.error));
+  }
   return json.result;
 }
 
 async function main() {
-  const provider = new ethers.JsonRpcProvider("https://rpc.sepolia.org");
+  const provider = new ethers.JsonRpcProvider(ETH_RPC);
+  const nearAdapter = await NearEthAdapter.fromConfig({
+    mpcContract: await MultichainContract.fromEnv(),
+  });
+  console.log(
+    `NearEth Adapter: ${nearAdapter.nearAccountId()} <> ${nearAdapter.address}`,
+  );
 
   const safeDeployment = (fn: DeploymentFunction) =>
     getDeployment(fn, { provider, version: "1.4.1" });
@@ -99,10 +132,6 @@ async function main() {
     ),
   };
 
-  const nearAdapter = await NearEthAdapter.fromConfig({
-    mpcContract: await MultichainContract.fromEnv(),
-  });
-
   const setup = await contracts.singleton.interface.encodeFunctionData(
     "setup",
     [
@@ -118,14 +147,21 @@ async function main() {
       ethers.ZeroAddress,
     ],
   );
-  const safeAddress =
-    await contracts.proxyFactory.createProxyWithNonce.staticCall(
+  let safeAddress: ethers.AddressLike;
+  try {
+    safeAddress = await contracts.proxyFactory.createProxyWithNonce.staticCall(
       contracts.singleton,
       setup,
       SAFE_SALT_NONCE,
     );
-  console.log("Safe Address:", safeAddress);
-
+    console.log("Safe Address:", safeAddress);
+  } catch (err: unknown) {
+    // TODO(bh2smith) - use // ethers.getCreate2Address(_from, _salt, _initCodeHash)
+    // Alternative (cheat) is to use safe tx api:
+    // https://safe-transaction-sepolia.safe.global/api/v1/owners/${nearAdapter.address}/safes/
+    // but this is not necessarily unique!
+    safeAddress = "0xDcf56F5a8Cc380f63b6396Dbddd0aE9fa605BeeE";
+  }
   const safeNotDeployed = (await provider.getCode(safeAddress)) === "0x";
   const { maxPriorityFeePerGas, maxFeePerGas } = await provider.getFeeData();
   if (!maxPriorityFeePerGas || !maxFeePerGas) {
@@ -145,9 +181,9 @@ async function main() {
       : {}),
     // <https://github.com/safe-global/safe-modules/blob/9a18245f546bf2a8ed9bdc2b04aae44f949ec7a0/modules/4337/contracts/Safe4337Module.sol#L172>
     callData: contracts.m4337.interface.encodeFunctionData("executeUserOp", [
-      ethers.ZeroAddress,
-      0,
-      "0x",
+      nearAdapter.address,
+      1n, // 1 wei
+      "0x626832736d6974682077757a20686572652c207369676e696e672066726f6d204e656172", // bh2smith wuz here, signing from Near
       0,
     ]),
     verificationGasLimit: ethers.toBeHex(safeNotDeployed ? 1_000_000 : 200_000),
@@ -160,7 +196,7 @@ async function main() {
     //paymasterGasLimit: ethers.toBeHex(100000),
     //paymasterData: paymasterCallData,
   };
-  console.log(unsignedUserOp);
+  console.log("Unsigned UserOp", unsignedUserOp);
 
   const packGas = (hi: ethers.BigNumberish, lo: ethers.BigNumberish) =>
     ethers.solidityPacked(["uint128", "uint128"], [hi, lo]);
@@ -183,25 +219,27 @@ async function main() {
     paymasterAndData: "0x",
     signature: ethers.solidityPacked(["uint48", "uint48"], [0, 0]),
   });
-  console.log(safeOpHash);
-
+  console.log("Safe Op Hash", safeOpHash);
+  console.log("Signing with Near...");
   const signature = ethers.solidityPacked(
     ["uint48", "uint48", "bytes"],
     [0, 0, await getNearSignature(nearAdapter, safeOpHash)],
   );
-  console.log(
-    await sendUserOperation(
-      { ...unsignedUserOp, signature },
-      await contracts.entryPoint.getAddress(),
-    ),
+  const userOpHash = await sendUserOperation(
+    { ...unsignedUserOp, signature },
+    await contracts.entryPoint.getAddress(),
   );
+  console.log("User OpHash", userOpHash)
+  // TODO(bh2smith) this is returning null!
+  const userOpReceipt = await getUserOpReceipt(userOpHash);
+  console.log("Success", userOpReceipt);
 }
 
 /**
  * Supported Representation of UserOperation for EntryPoint v0.7
  */
 interface UserOperation {
-  sender: string;
+  sender: ethers.AddressLike;
   nonce: string;
   factory?: string | ethers.Addressable;
   factoryData?: string | ethers.Addressable;
