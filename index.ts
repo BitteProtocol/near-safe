@@ -11,7 +11,7 @@ import { ethers } from "ethers";
 import { NearEthAdapter, MultichainContract } from "near-ca";
 
 dotenv.config();
-const { SAFE_SALT_NONCE, ERC4337_BUNDLER_URL, ETH_RPC } = process.env;
+const { SAFE_SALT_NONCE, ERC4337_BUNDLER_URL, ETH_RPC, RECOVERY_ADDRESS } = process.env;
 
 type DeploymentFunction = (filter?: {
   version: string;
@@ -165,7 +165,7 @@ async function main() {
   const setup = await contracts.singleton.interface.encodeFunctionData(
     "setup",
     [
-      [nearAdapter.address],
+      RECOVERY_ADDRESS !== undefined ? [nearAdapter.address, RECOVERY_ADDRESS] : [nearAdapter.address],
       1,
       contracts.moduleSetup.target,
       contracts.moduleSetup.interface.encodeFunctionData("enableModules", [
