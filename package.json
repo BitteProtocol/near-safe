@@ -7,6 +7,8 @@
     "fmt": "prettier -w ."
   },
   "dependencies": {
+    "@safe-global/relay-kit": "^3.0.1",
+    "@safe-global/safe-core-sdk-types": "^5.0.1",
     "@safe-global/safe-deployments": "^1.36.0",
     "@safe-global/safe-modules-deployments": "^2.1.1",
     "dotenv": "^16.4.5",
