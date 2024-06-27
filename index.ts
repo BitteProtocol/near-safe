@@ -196,6 +196,14 @@ async function main() {
   );
   console.log("Safe Address:", safeAddress);
   const safeNotDeployed = (await provider.getCode(safeAddress)) === "0x";
+  if (safeNotDeployed && !argv.usePaymaster) {
+    // Check safe has been funded:
+    const safeBalance = await provider.getBalance(safeAddress);
+    if (safeBalance === 0n) {
+      console.log("WARN: Undeployed Safe is must be funded.");
+      return;
+    }
+  }
   // TODO(bh2smith) Use Bundler Gas Data Feed:
   // Error: maxPriorityFeePerGas must be at least 330687958 (current maxPriorityFeePerGas: 328006616)
   // - use pimlico_getUserOperationGasPrice to get the current gas price
