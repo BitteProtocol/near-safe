@@ -230,10 +230,11 @@ async function main() {
   console.log("PaymasterData", paymasterData);
   const unsignedUserOp = {
     ...rawUserOp,
-    paymasterAndData: getPaymasterAndData({ ...paymasterData }),
-    preVerificationGas: paymasterData.preVerificationGas,
-    verificationGasLimit: paymasterData.verificationGasLimit,
-    callGasLimit: paymasterData.callGasLimit,
+    ...paymasterData,
+    // paymasterAndData: getPaymasterAndData({ ...paymasterData }),
+    // preVerificationGas: paymasterData.preVerificationGas,
+    // verificationGasLimit: paymasterData.verificationGasLimit,
+    // callGasLimit: paymasterData.callGasLimit,
   };
   console.log("Unsigned UserOp", unsignedUserOp);
 
@@ -255,7 +256,7 @@ async function main() {
       unsignedUserOp.maxPriorityFeePerGas,
       unsignedUserOp.maxFeePerGas,
     ),
-    paymasterAndData: unsignedUserOp.paymasterAndData,
+    paymasterAndData: getPaymasterAndData({ ...paymasterData }),
     signature: ethers.solidityPacked(["uint48", "uint48"], [0, 0]),
   });
   console.log("Safe Op Hash", safeOpHash);
