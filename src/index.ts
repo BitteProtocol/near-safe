@@ -4,30 +4,13 @@ import { NearEthAdapter, MultichainContract } from "near-ca";
 import yargs from "yargs";
 import { hideBin } from "yargs/helpers";
 import { ContractSuite } from "./safe";
+import { getNearSignature } from "./near";
 
 dotenv.config();
 const { SAFE_SALT_NONCE, ERC4337_BUNDLER_URL, ETH_RPC, RECOVERY_ADDRESS } =
   process.env;
 const DUMMY_ECDSA_SIG =
   "0x000000000000000000000000ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff";
-
-async function getNearSignature(
-  adapter: NearEthAdapter,
-  hash: ethers.BytesLike,
-): Promise<`0x${string}`> {
-  const viemHash = typeof hash === "string" ? (hash as `0x${string}`) : hash;
-  // MPC Contract produces two possible signatures.
-  const signatures = await adapter.sign(viemHash);
-  for (const sig of signatures) {
-    if (
-      ethers.recoverAddress(hash, sig).toLocaleLowerCase() ===
-      adapter.address.toLocaleLowerCase()
-    ) {
-      return sig;
-    }
-  }
-  throw new Error("Invalid signature!");
-}
 
 async function sendUserOperation(userOp: UserOperation, entryPoint: string) {
   const response = await fetch(ERC4337_BUNDLER_URL!, {
