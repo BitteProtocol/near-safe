@@ -31,28 +31,26 @@ async function main() {
     ERC4337_BUNDLER_URL!,
     await safePack.entryPoint.getAddress(),
   );
-  const owners =
-    RECOVERY_ADDRESS !== undefined
-      ? [nearAdapter.address, RECOVERY_ADDRESS]
-      : [nearAdapter.address];
+
+  // TODO(bh2smith): add the recovery as first tx (more deterministic)
+  const owners = [
+    nearAdapter.address,
+    ...(RECOVERY_ADDRESS ? [RECOVERY_ADDRESS] : []),
+  ];
   const setup = await safePack.getSetup(owners);
   const safeAddress = await safePack.addressForSetup(setup, SAFE_SALT_NONCE);
   console.log("Safe Address:", safeAddress);
-  // Check safe has been funded:
   const safeNotDeployed = await assertFunded(
     provider,
     safeAddress,
     argv.usePaymaster,
   );
 
-  // TODO(bh2smith) Use Bundler Gas Data Feed:
-  // Error: maxPriorityFeePerGas must be at least 330687958 (current maxPriorityFeePerGas: 328006616)
-  // - use pimlico_getUserOperationGasPrice to get the current gas price
+  // TODO(bh2smith) Bundler Gas Feed: `pimlico_getUserOperationGasPrice`
   const gasFees = await provider.getFeeData();
 
   const rawUserOp = await safePack.buildUserOp(
-    // Transaction Data:
-    { to: nearAdapter.address, value: 1n, data: "0x69" },
+    { to: nearAdapter.address, value: 1n, data: "0x69" }, // Transaction Data:
     safeAddress,
     gasFees,
     setup,
@@ -65,10 +63,7 @@ async function main() {
     safeNotDeployed,
   );
 
-  const unsignedUserOp = {
-    ...rawUserOp,
-    ...paymasterData,
-  };
+  const unsignedUserOp = { ...rawUserOp, ...paymasterData };
   console.log("Unsigned UserOp", unsignedUserOp);
   const safeOpHash = await safePack.getOpHash(unsignedUserOp, paymasterData);
 

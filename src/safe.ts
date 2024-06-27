@@ -138,6 +138,22 @@ export class ContractSuite {
     });
   }
 
+  factoryDataForSetup(
+    safeNotDeployed: boolean,
+    setup: string,
+    safeSaltNonce: string,
+  ): { factory?: ethers.AddressLike; factoryData?: string } {
+    return safeNotDeployed
+      ? {
+          factory: this.proxyFactory.target,
+          factoryData: this.proxyFactory.interface.encodeFunctionData(
+            "createProxyWithNonce",
+            [this.singleton.target, setup, safeSaltNonce],
+          ),
+        }
+      : {};
+  }
+
   async buildUserOp(
     txData: {
       to: `0x${string}`;
@@ -157,15 +173,7 @@ export class ContractSuite {
     const rawUserOp = {
       sender: safeAddress,
       nonce: ethers.toBeHex(await this.entryPoint.getNonce(safeAddress, 0)),
-      ...(safeNotDeployed
-        ? {
-            factory: this.proxyFactory.target,
-            factoryData: this.proxyFactory.interface.encodeFunctionData(
-              "createProxyWithNonce",
-              [this.singleton.target, setup, safeSaltNonce],
-            ),
-          }
-        : {}),
+      ...this.factoryDataForSetup(safeNotDeployed, setup, safeSaltNonce),
       // <https://github.com/safe-global/safe-modules/blob/9a18245f546bf2a8ed9bdc2b04aae44f949ec7a0/modules/4337/contracts/Safe4337Module.sol#L172>
       callData: this.m4337.interface.encodeFunctionData("executeUserOp", [
         txData.to,
@@ -173,7 +181,7 @@ export class ContractSuite {
         txData.data || "0x",
         0,
       ]),
-      maxPriorityFeePerGas: ethers.toBeHex(maxPriorityFeePerGas * 2n),
+      maxPriorityFeePerGas: ethers.toBeHex((maxPriorityFeePerGas * 12n) / 10n),
       maxFeePerGas: ethers.toBeHex(maxFeePerGas),
     };
     return rawUserOp;
