@@ -53,10 +53,36 @@ export async function getUserOpReceipt(bundlerUrl: string, userOpHash: string) {
   return json.result;
 }
 
+const DUMMY_ECDSA_SIG =
+  "0x000000000000000000000000ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff";
+export async function getPaymasterData(
+  bundlerUrl: string,
+  entryPointAddress: string,
+  rawUserOp: any,
+  usePaymaster: boolean,
+  safeNotDeployed: boolean,
+): Promise<PaymasterData> {
+  let paymasterData = {
+    verificationGasLimit: ethers.toBeHex(safeNotDeployed ? 500000 : 100000),
+    callGasLimit: ethers.toBeHex(100000),
+    preVerificationGas: ethers.toBeHex(100000),
+  };
+  if (usePaymaster) {
+    console.log("Requesting paymaster data");
+    const pimlicoProvider = new ethers.JsonRpcProvider(bundlerUrl);
+    paymasterData = await pimlicoProvider.send("pm_sponsorUserOperation", [
+      { ...rawUserOp, signature: DUMMY_ECDSA_SIG },
+      entryPointAddress,
+    ]);
+    console.log("PaymasterData", paymasterData);
+  }
+  return paymasterData;
+}
+
 /**
  * Supported Representation of UserOperation for EntryPoint v0.7
  */
-interface UserOperation {
+export interface UserOperation {
   sender: ethers.AddressLike;
   nonce: string;
   factory?: ethers.AddressLike;
@@ -67,10 +93,10 @@ interface UserOperation {
   preVerificationGas: string;
   maxPriorityFeePerGas: string;
   maxFeePerGas: string;
-  signature: string;
+  signature?: string;
 }
 
-export interface PaymasterResponseData {
+export interface PaymasterData {
   paymaster?: string;
   paymasterData?: string;
   paymasterVerificationGasLimit?: string;
@@ -80,7 +106,7 @@ export interface PaymasterResponseData {
   preVerificationGas: string;
 }
 
-export function packPaymasterData(data: PaymasterResponseData) {
+export function packPaymasterData(data: PaymasterData) {
   return data.paymaster
     ? ethers.hexlify(
         ethers.concat([

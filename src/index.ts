@@ -6,16 +6,14 @@ import { hideBin } from "yargs/helpers";
 import { ContractSuite } from "./safe";
 import { getNearSignature } from "./near";
 import {
+  getPaymasterData,
   getUserOpReceipt,
-  packPaymasterData,
   sendUserOperation,
 } from "./bundler";
 
 dotenv.config();
 const { SAFE_SALT_NONCE, ERC4337_BUNDLER_URL, ETH_RPC, RECOVERY_ADDRESS } =
   process.env;
-const DUMMY_ECDSA_SIG =
-  "0x000000000000000000000000ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff";
 
 async function main() {
   const argv = await yargs(hideBin(process.argv)).option("usePaymaster", {
@@ -55,10 +53,12 @@ async function main() {
   // TODO(bh2smith) Use Bundler Gas Data Feed:
   // Error: maxPriorityFeePerGas must be at least 330687958 (current maxPriorityFeePerGas: 328006616)
   // - use pimlico_getUserOperationGasPrice to get the current gas price
-  const { maxPriorityFeePerGas, maxFeePerGas } = await provider.getFeeData();
+  const gasFees = await provider.getFeeData();
+  const { maxPriorityFeePerGas, maxFeePerGas } = gasFees;
   if (!maxPriorityFeePerGas || !maxFeePerGas) {
     throw new Error("no gas fee data");
   }
+  console.log("Gas Fees", gasFees);
   const rawUserOp = {
     sender: safeAddress,
     nonce: ethers.toBeHex(await contracts.entryPoint.getNonce(safeAddress, 0)),
@@ -80,56 +80,26 @@ async function main() {
       ),
       0,
     ]),
-    maxPriorityFeePerGas: ethers.toBeHex((maxPriorityFeePerGas * 15n) / 10n),
+    maxPriorityFeePerGas: ethers.toBeHex(maxPriorityFeePerGas * 2n),
     maxFeePerGas: ethers.toBeHex(maxFeePerGas),
   };
-  let paymasterData = {
-    verificationGasLimit: ethers.toBeHex(safeNotDeployed ? 500000 : 100000),
-    callGasLimit: ethers.toBeHex(100000),
-    preVerificationGas: ethers.toBeHex(100000),
-  };
-  if (argv.usePaymaster) {
-    console.log("Requesting paymaster data");
-    const pimlicoProvider = new ethers.JsonRpcProvider(ERC4337_BUNDLER_URL);
-    paymasterData = await pimlicoProvider.send("pm_sponsorUserOperation", [
-      { ...rawUserOp, signature: DUMMY_ECDSA_SIG },
-      await contracts.entryPoint.getAddress(),
-    ]);
-    console.log("PaymasterData", paymasterData);
-  }
+  const paymasterData = await getPaymasterData(
+    ERC4337_BUNDLER_URL!,
+    await contracts.entryPoint.getAddress(),
+    rawUserOp,
+    argv.usePaymaster,
+    safeNotDeployed,
+  );
   const unsignedUserOp = {
     ...rawUserOp,
     ...paymasterData,
   };
   console.log("Unsigned UserOp", unsignedUserOp);
+  const safeOpHash = await contracts.getOpHash(unsignedUserOp, paymasterData);
 
-  const packGas = (hi: ethers.BigNumberish, lo: ethers.BigNumberish) =>
-    ethers.solidityPacked(["uint128", "uint128"], [hi, lo]);
-  const safeOpHash = await contracts.m4337.getOperationHash({
-    ...unsignedUserOp,
-    initCode: unsignedUserOp.factory
-      ? ethers.solidityPacked(
-          ["address", "bytes"],
-          [unsignedUserOp.factory, unsignedUserOp.factoryData],
-        )
-      : "0x",
-    accountGasLimits: packGas(
-      unsignedUserOp.verificationGasLimit,
-      unsignedUserOp.callGasLimit,
-    ),
-    gasFees: packGas(
-      unsignedUserOp.maxPriorityFeePerGas,
-      unsignedUserOp.maxFeePerGas,
-    ),
-    paymasterAndData: packPaymasterData(paymasterData),
-    signature: ethers.solidityPacked(["uint48", "uint48"], [0, 0]),
-  });
-  console.log("Safe Op Hash", safeOpHash);
   console.log("Signing with Near...");
-  const signature = ethers.solidityPacked(
-    ["uint48", "uint48", "bytes"],
-    [0, 0, await getNearSignature(nearAdapter, safeOpHash)],
-  );
+  const signature = await getNearSignature(nearAdapter, safeOpHash);
+
   const userOpHash = await sendUserOperation(
     ERC4337_BUNDLER_URL!,
     { ...unsignedUserOp, signature },

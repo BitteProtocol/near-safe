@@ -7,6 +7,8 @@ import {
   getSafe4337ModuleDeployment,
   getSafeModuleSetupDeployment,
 } from "@safe-global/safe-modules-deployments";
+import { packGas } from "./util";
+import { PaymasterData, UserOperation, packPaymasterData } from "./bundler";
 
 /**
  * All contracts used in account creation & execution
@@ -104,6 +106,31 @@ export class ContractSuite {
       ethers.ZeroAddress,
     ]);
     return setup;
+  }
+
+  async getOpHash(
+    unsignedUserOp: UserOperation,
+    paymasterData: PaymasterData,
+  ): Promise<string> {
+    return this.m4337.getOperationHash({
+      ...unsignedUserOp,
+      initCode: unsignedUserOp.factory
+        ? ethers.solidityPacked(
+            ["address", "bytes"],
+            [unsignedUserOp.factory, unsignedUserOp.factoryData],
+          )
+        : "0x",
+      accountGasLimits: packGas(
+        unsignedUserOp.verificationGasLimit,
+        unsignedUserOp.callGasLimit,
+      ),
+      gasFees: packGas(
+        unsignedUserOp.maxPriorityFeePerGas,
+        unsignedUserOp.maxFeePerGas,
+      ),
+      paymasterAndData: packPaymasterData(paymasterData),
+      signature: ethers.solidityPacked(["uint48", "uint48"], [0, 0]),
+    });
   }
 }
 
