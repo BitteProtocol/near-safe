@@ -1,24 +1,24 @@
 {
-  "name": "nearly-safe",
+  "name": "near-safe",
   "version": "0.0.0",
   "private": true,
   "scripts": {
-    "start": "ts-node index.ts",
+    "start": "ts-node src/index.ts",
     "fmt": "prettier -w ."
   },
   "dependencies": {
-    "@safe-global/safe-deployments": "^1.36.0",
-    "@safe-global/safe-modules-deployments": "^2.1.1",
+    "@safe-global/safe-deployments": "^1.37.0",
+    "@safe-global/safe-modules-deployments": "^2.2.0",
     "dotenv": "^16.4.5",
-    "ethers": "^6.13.0",
+    "ethers": "^6.13.1",
     "near-ca": "^0.0.10-alpha.1",
     "yargs": "^17.7.2"
   },
   "devDependencies": {
-    "@types/node": "^20.14.2",
+    "@types/node": "^20.14.9",
     "@types/yargs": "^17.0.32",
     "prettier": "^3.3.2",
     "ts-node": "^10.9.2",
-    "typescript": "^5.4.5"
+    "typescript": "^5.5.2"
   }
 }
