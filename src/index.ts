@@ -6,7 +6,7 @@ import { hideBin } from "yargs/helpers";
 import { ContractSuite } from "./safe";
 import { getNearSignature } from "./near";
 import { Erc4337Bundler } from "./bundler";
-import { assertFunded } from "./util";
+import { assertFunded, packSignature } from "./util";
 
 dotenv.config();
 const { SAFE_SALT_NONCE, ERC4337_BUNDLER_URL, ETH_RPC, RECOVERY_ADDRESS } =
@@ -72,7 +72,7 @@ async function main() {
 
   const userOpHash = await bundler.sendUserOperation({
     ...unsignedUserOp,
-    signature,
+    signature: packSignature(signature),
   });
   console.log("UserOp Hash", userOpHash);
 

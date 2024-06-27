@@ -13,7 +13,7 @@ export async function getNearSignature(
       ethers.recoverAddress(hash, sig).toLocaleLowerCase() ===
       adapter.address.toLocaleLowerCase()
     ) {
-      return ethers.solidityPacked(["uint48", "uint48", "bytes"], [0, 0, sig]);
+      return sig;
     }
   }
   throw new Error("Invalid signature!");

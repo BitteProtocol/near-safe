@@ -19,3 +19,14 @@ export async function assertFunded(
   }
   return safeNotDeployed;
 }
+
+export function packSignature(
+  signature: string,
+  validFrom: number = 0,
+  validTo: number = 0,
+): string {
+  return ethers.solidityPacked(
+    ["uint48", "uint48", "bytes"],
+    [validFrom, validTo, signature],
+  );
+}
