@@ -303,29 +303,23 @@ interface ContractSuite {
   entryPoint: ethers.Contract;
 }
 
-function concatEthers(parts: (string | Uint8Array)[]): string {
-  const concatArray = ethers.concat(parts);
-  return ethers.hexlify(concatArray);
-}
-
 export interface PaymasterData {
   paymaster: string;
   paymasterData: string;
-  // preVerificationGas: '0xe4bf',
-  // verificationGasLimit: '0x12c4c',
-  // callGasLimit: '0x1664b',
   paymasterVerificationGasLimit: string;
   paymasterPostOpGasLimit: string;
 }
 
-function getPaymasterAndData(unpackedUserOperation: PaymasterData) {
-  return unpackedUserOperation.paymaster
-    ? concatEthers([
-        unpackedUserOperation.paymaster,
-        ethers.toBeHex(unpackedUserOperation.paymasterVerificationGasLimit, 16),
-        ethers.toBeHex(unpackedUserOperation.paymasterPostOpGasLimit, 16),
-        unpackedUserOperation.paymasterData || "0x",
-      ])
+function getPaymasterAndData(data: PaymasterData) {
+  return data.paymaster
+    ? ethers.hexlify(
+        ethers.concat([
+          data.paymaster,
+          ethers.toBeHex(data.paymasterVerificationGasLimit || "0x", 16),
+          ethers.toBeHex(data.paymasterPostOpGasLimit || "0x", 16),
+          data.paymasterData || "0x",
+        ]),
+      )
     : "0x";
 }
 
