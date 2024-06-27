@@ -287,9 +287,15 @@ async function main() {
     await contracts.entryPoint.getAddress(),
   );
   console.log("UserOp Hash", userOpHash);
-  // TODO(bh2smith) this is returning null because we are requesting it too soon!
-  // Maybe better to `eth_getUserOperationByHash` (although this also returns null).
-  const userOpReceipt = await getUserOpReceipt(userOpHash);
+
+  // TODO(bh2smith): use safe4337Pack
+  // https://docs.safe.global/sdk/relay-kit/guides/4337-safe-sdk#check-the-transaction-status
+  let userOpReceipt = null;
+  while (!userOpReceipt) {
+    // Wait 2 seconds before checking the status again
+    await new Promise((resolve) => setTimeout(resolve, 2000));
+    userOpReceipt = await getUserOpReceipt(userOpHash);
+  }
   console.log("userOp Receipt", userOpReceipt);
 }
 
