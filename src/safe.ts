@@ -7,9 +7,8 @@ import {
   getSafe4337ModuleDeployment,
   getSafeModuleSetupDeployment,
 } from "@safe-global/safe-modules-deployments";
-import { packGas } from "./util";
-import { PaymasterData, UserOperation, packPaymasterData } from "./bundler";
-import { BaseTx } from "near-ca";
+import { PLACEHOLDER_SIG, packGas, packPaymasterData } from "./util";
+import { PaymasterData, UserOperation } from "./types";
 
 /**
  * All contracts used in account creation & execution
@@ -134,7 +133,7 @@ export class ContractSuite {
         unsignedUserOp.maxFeePerGas,
       ),
       paymasterAndData: packPaymasterData(paymasterData),
-      signature: ethers.solidityPacked(["uint48", "uint48"], [0, 0]),
+      signature: PLACEHOLDER_SIG,
     });
   }
 
