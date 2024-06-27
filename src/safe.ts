@@ -9,11 +9,13 @@ import {
 } from "@safe-global/safe-modules-deployments";
 import { packGas } from "./util";
 import { PaymasterData, UserOperation, packPaymasterData } from "./bundler";
+import { BaseTx } from "near-ca";
 
 /**
  * All contracts used in account creation & execution
  */
 export class ContractSuite {
+  provider: ethers.JsonRpcProvider;
   singleton: ethers.Contract;
   proxyFactory: ethers.Contract;
   m4337: ethers.Contract;
@@ -21,12 +23,14 @@ export class ContractSuite {
   entryPoint: ethers.Contract;
 
   constructor(
+    provider: ethers.JsonRpcProvider,
     singleton: ethers.Contract,
     proxyFactory: ethers.Contract,
     m4337: ethers.Contract,
     moduleSetup: ethers.Contract,
     entryPoint: ethers.Contract,
   ) {
+    this.provider = provider;
     this.singleton = singleton;
     this.proxyFactory = proxyFactory;
     this.m4337 = m4337;
@@ -55,6 +59,7 @@ export class ContractSuite {
       provider,
     );
     return new ContractSuite(
+      provider,
       singleton,
       proxyFactory,
       m4337,
@@ -63,7 +68,7 @@ export class ContractSuite {
     );
   }
 
-  async getSafeAddressForSetup(
+  async addressForSetup(
     setup: ethers.BytesLike,
     saltNonce?: string,
   ): Promise<ethers.AddressLike> {
@@ -131,6 +136,47 @@ export class ContractSuite {
       paymasterAndData: packPaymasterData(paymasterData),
       signature: ethers.solidityPacked(["uint48", "uint48"], [0, 0]),
     });
+  }
+
+  async buildUserOp(
+    txData: {
+      to: `0x${string}`;
+      value?: bigint;
+      data?: `0x${string}`;
+    },
+    safeAddress: ethers.AddressLike,
+    feeData: ethers.FeeData,
+    setup: string,
+    safeNotDeployed: boolean,
+    safeSaltNonce: string,
+  ): Promise<any> {
+    const { maxPriorityFeePerGas, maxFeePerGas } = feeData;
+    if (!maxPriorityFeePerGas || !maxFeePerGas) {
+      throw new Error("no gas fee data");
+    }
+    const rawUserOp = {
+      sender: safeAddress,
+      nonce: ethers.toBeHex(await this.entryPoint.getNonce(safeAddress, 0)),
+      ...(safeNotDeployed
+        ? {
+            factory: this.proxyFactory.target,
+            factoryData: this.proxyFactory.interface.encodeFunctionData(
+              "createProxyWithNonce",
+              [this.singleton.target, setup, safeSaltNonce],
+            ),
+          }
+        : {}),
+      // <https://github.com/safe-global/safe-modules/blob/9a18245f546bf2a8ed9bdc2b04aae44f949ec7a0/modules/4337/contracts/Safe4337Module.sol#L172>
+      callData: this.m4337.interface.encodeFunctionData("executeUserOp", [
+        txData.to,
+        txData.value || 0n,
+        txData.data || "0x",
+        0,
+      ]),
+      maxPriorityFeePerGas: ethers.toBeHex(maxPriorityFeePerGas * 2n),
+      maxFeePerGas: ethers.toBeHex(maxFeePerGas),
+    };
+    return rawUserOp;
   }
 }
 

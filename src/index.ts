@@ -10,6 +10,7 @@ import {
   getUserOpReceipt,
   sendUserOperation,
 } from "./bundler";
+import { assertFunded } from "./util";
 
 dotenv.config();
 const { SAFE_SALT_NONCE, ERC4337_BUNDLER_URL, ETH_RPC, RECOVERY_ADDRESS } =
@@ -29,73 +30,49 @@ async function main() {
     `NearEth Adapter: ${nearAdapter.nearAccountId()} <> ${nearAdapter.address}`,
   );
 
-  const contracts = await ContractSuite.init(provider);
-  const setup = await contracts.getSetup(
+  const safePack = await ContractSuite.init(provider);
+  const owners =
     RECOVERY_ADDRESS !== undefined
       ? [nearAdapter.address, RECOVERY_ADDRESS]
-      : [nearAdapter.address],
+      : [nearAdapter.address];
+  const setup = await safePack.getSetup(owners);
+  const safeAddress = await safePack.addressForSetup(setup, SAFE_SALT_NONCE);
+  console.log("Safe Address:", safeAddress);
+  // Check safe has been funded:
+  const safeNotDeployed = await assertFunded(
+    provider,
+    safeAddress,
+    argv.usePaymaster,
   );
 
-  const safeAddress = await contracts.getSafeAddressForSetup(
-    setup,
-    SAFE_SALT_NONCE,
-  );
-  console.log("Safe Address:", safeAddress);
-  const safeNotDeployed = (await provider.getCode(safeAddress)) === "0x";
-  if (safeNotDeployed && !argv.usePaymaster) {
-    // Check safe has been funded:
-    const safeBalance = await provider.getBalance(safeAddress);
-    if (safeBalance === 0n) {
-      console.log("WARN: Undeployed Safe is must be funded.");
-      return;
-    }
-  }
   // TODO(bh2smith) Use Bundler Gas Data Feed:
   // Error: maxPriorityFeePerGas must be at least 330687958 (current maxPriorityFeePerGas: 328006616)
   // - use pimlico_getUserOperationGasPrice to get the current gas price
   const gasFees = await provider.getFeeData();
-  const { maxPriorityFeePerGas, maxFeePerGas } = gasFees;
-  if (!maxPriorityFeePerGas || !maxFeePerGas) {
-    throw new Error("no gas fee data");
-  }
-  console.log("Gas Fees", gasFees);
-  const rawUserOp = {
-    sender: safeAddress,
-    nonce: ethers.toBeHex(await contracts.entryPoint.getNonce(safeAddress, 0)),
-    ...(safeNotDeployed
-      ? {
-          factory: contracts.proxyFactory.target,
-          factoryData: contracts.proxyFactory.interface.encodeFunctionData(
-            "createProxyWithNonce",
-            [contracts.singleton.target, setup, SAFE_SALT_NONCE],
-          ),
-        }
-      : {}),
-    // <https://github.com/safe-global/safe-modules/blob/9a18245f546bf2a8ed9bdc2b04aae44f949ec7a0/modules/4337/contracts/Safe4337Module.sol#L172>
-    callData: contracts.m4337.interface.encodeFunctionData("executeUserOp", [
-      nearAdapter.address,
-      1n, // 1 wei
-      ethers.hexlify(
-        ethers.toUtf8Bytes("https://github.com/bh2smith/nearly-safe"),
-      ),
-      0,
-    ]),
-    maxPriorityFeePerGas: ethers.toBeHex(maxPriorityFeePerGas * 2n),
-    maxFeePerGas: ethers.toBeHex(maxFeePerGas),
-  };
+
+  const rawUserOp = await safePack.buildUserOp(
+    // Transaction Data:
+    { to: nearAdapter.address, value: 1n, data: "0x69" },
+    safeAddress,
+    gasFees,
+    setup,
+    safeNotDeployed,
+    SAFE_SALT_NONCE || "0",
+  );
   const paymasterData = await getPaymasterData(
     ERC4337_BUNDLER_URL!,
-    await contracts.entryPoint.getAddress(),
+    await safePack.entryPoint.getAddress(),
     rawUserOp,
     argv.usePaymaster,
     safeNotDeployed,
   );
+
   const unsignedUserOp = {
     ...rawUserOp,
     ...paymasterData,
   };
   console.log("Unsigned UserOp", unsignedUserOp);
-  const safeOpHash = await contracts.getOpHash(unsignedUserOp, paymasterData);
+  const safeOpHash = await safePack.getOpHash(unsignedUserOp, paymasterData);
 
   console.log("Signing with Near...");
   const signature = await getNearSignature(nearAdapter, safeOpHash);
@@ -103,7 +80,7 @@ async function main() {
   const userOpHash = await sendUserOperation(
     ERC4337_BUNDLER_URL!,
     { ...unsignedUserOp, signature },
-    await contracts.entryPoint.getAddress(),
+    await safePack.entryPoint.getAddress(),
   );
   console.log("UserOp Hash", userOpHash);
 
