@@ -11,10 +11,12 @@
     "@safe-global/safe-modules-deployments": "^2.1.1",
     "dotenv": "^16.4.5",
     "ethers": "^6.13.0",
-    "near-ca": "^0.0.10-alpha.1"
+    "near-ca": "^0.0.10-alpha.1",
+    "yargs": "^17.7.2"
   },
   "devDependencies": {
     "@types/node": "^20.14.2",
+    "@types/yargs": "^17.0.32",
     "prettier": "^3.3.2",
     "ts-node": "^10.9.2",
     "typescript": "^5.4.5"
