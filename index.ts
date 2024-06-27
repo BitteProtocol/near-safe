@@ -222,6 +222,16 @@ async function main() {
     //paymasterGasLimit: ethers.toBeHex(100000),
     //paymasterData: paymasterCallData,
   };
+
+  const pimlicoProvider = new ethers.JsonRpcProvider(ERC4337_BUNDLER_URL)
+ 
+  const result = await pimlicoProvider.send(
+      "pm_sponsorUserOperation", 
+      [unsignedUserOp, await contracts.entryPoint.getAddress() ]
+  )
+  console.log("Result", result);
+  const paymasterAndData = result.paymasterAndData
+  return;
   // console.log("Unsigned UserOp", unsignedUserOp);
 
   const packGas = (hi: ethers.BigNumberish, lo: ethers.BigNumberish) =>
