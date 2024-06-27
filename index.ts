@@ -11,7 +11,10 @@ import { ethers } from "ethers";
 import { NearEthAdapter, MultichainContract } from "near-ca";
 
 dotenv.config();
-const { SAFE_SALT_NONCE, ERC4337_BUNDLER_URL, ETH_RPC, RECOVERY_ADDRESS } = process.env;
+const { SAFE_SALT_NONCE, ERC4337_BUNDLER_URL, ETH_RPC, RECOVERY_ADDRESS } =
+  process.env;
+const DUMMY_ECDSA_SIG =
+  "0x000000000000000000000000ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff";
 
 type DeploymentFunction = (filter?: {
   version: string;
@@ -165,7 +168,9 @@ async function main() {
   const setup = await contracts.singleton.interface.encodeFunctionData(
     "setup",
     [
-      RECOVERY_ADDRESS !== undefined ? [nearAdapter.address, RECOVERY_ADDRESS] : [nearAdapter.address],
+      RECOVERY_ADDRESS !== undefined
+        ? [nearAdapter.address, RECOVERY_ADDRESS]
+        : [nearAdapter.address],
       1,
       contracts.moduleSetup.target,
       contracts.moduleSetup.interface.encodeFunctionData("enableModules", [
@@ -191,7 +196,7 @@ async function main() {
   if (!maxPriorityFeePerGas || !maxFeePerGas) {
     throw new Error("no gas fee data");
   }
-  const unsignedUserOp = {
+  const rawUserOp = {
     sender: safeAddress,
     nonce: ethers.toBeHex(await contracts.entryPoint.getNonce(safeAddress, 0)),
     ...(safeNotDeployed
@@ -212,27 +217,25 @@ async function main() {
       ),
       0,
     ]),
-    verificationGasLimit: ethers.toBeHex(safeNotDeployed ? 500000 : 100000),
-    callGasLimit: ethers.toBeHex(100000),
-    preVerificationGas: ethers.toBeHex(100000),
     maxPriorityFeePerGas: ethers.toBeHex((maxPriorityFeePerGas * 15n) / 10n),
     maxFeePerGas: ethers.toBeHex(maxFeePerGas),
-    // TODO(bh2smith): Use paymaster at some point
-    //paymaster: paymasterAddress,
-    //paymasterGasLimit: ethers.toBeHex(100000),
-    //paymasterData: paymasterCallData,
   };
 
-  const pimlicoProvider = new ethers.JsonRpcProvider(ERC4337_BUNDLER_URL)
- 
-  const result = await pimlicoProvider.send(
-      "pm_sponsorUserOperation", 
-      [unsignedUserOp, await contracts.entryPoint.getAddress() ]
-  )
-  console.log("Result", result);
-  const paymasterAndData = result.paymasterAndData
-  return;
-  // console.log("Unsigned UserOp", unsignedUserOp);
+  const pimlicoProvider = new ethers.JsonRpcProvider(ERC4337_BUNDLER_URL);
+
+  const paymasterData = await pimlicoProvider.send("pm_sponsorUserOperation", [
+    { ...rawUserOp, signature: DUMMY_ECDSA_SIG },
+    await contracts.entryPoint.getAddress(),
+  ]);
+  console.log("PaymasterData", paymasterData);
+  const unsignedUserOp = {
+    ...rawUserOp,
+    paymasterAndData: getPaymasterAndData({ ...paymasterData }),
+    preVerificationGas: paymasterData.preVerificationGas,
+    verificationGasLimit: paymasterData.verificationGasLimit,
+    callGasLimit: paymasterData.callGasLimit,
+  };
+  console.log("Unsigned UserOp", unsignedUserOp);
 
   const packGas = (hi: ethers.BigNumberish, lo: ethers.BigNumberish) =>
     ethers.solidityPacked(["uint128", "uint128"], [hi, lo]);
@@ -252,7 +255,7 @@ async function main() {
       unsignedUserOp.maxPriorityFeePerGas,
       unsignedUserOp.maxFeePerGas,
     ),
-    paymasterAndData: "0x",
+    paymasterAndData: unsignedUserOp.paymasterAndData,
     signature: ethers.solidityPacked(["uint48", "uint48"], [0, 0]),
   });
   console.log("Safe Op Hash", safeOpHash);
@@ -298,6 +301,32 @@ interface ContractSuite {
   m4337: ethers.Contract;
   moduleSetup: ethers.Contract;
   entryPoint: ethers.Contract;
+}
+
+function concatEthers(parts: (string | Uint8Array)[]): string {
+  const concatArray = ethers.concat(parts);
+  return ethers.hexlify(concatArray);
+}
+
+export interface PaymasterData {
+  paymaster: string;
+  paymasterData: string;
+  // preVerificationGas: '0xe4bf',
+  // verificationGasLimit: '0x12c4c',
+  // callGasLimit: '0x1664b',
+  paymasterVerificationGasLimit: string;
+  paymasterPostOpGasLimit: string;
+}
+
+function getPaymasterAndData(unpackedUserOperation: PaymasterData) {
+  return unpackedUserOperation.paymaster
+    ? concatEthers([
+        unpackedUserOperation.paymaster,
+        ethers.toBeHex(unpackedUserOperation.paymasterVerificationGasLimit, 16),
+        ethers.toBeHex(unpackedUserOperation.paymasterPostOpGasLimit, 16),
+        unpackedUserOperation.paymasterData || "0x",
+      ])
+    : "0x";
 }
 
 main().catch((err) => {
