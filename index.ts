@@ -222,7 +222,6 @@ async function main() {
   };
 
   const pimlicoProvider = new ethers.JsonRpcProvider(ERC4337_BUNDLER_URL);
-
   const paymasterData = await pimlicoProvider.send("pm_sponsorUserOperation", [
     { ...rawUserOp, signature: DUMMY_ECDSA_SIG },
     await contracts.entryPoint.getAddress(),
@@ -231,10 +230,6 @@ async function main() {
   const unsignedUserOp = {
     ...rawUserOp,
     ...paymasterData,
-    // paymasterAndData: getPaymasterAndData({ ...paymasterData }),
-    // preVerificationGas: paymasterData.preVerificationGas,
-    // verificationGasLimit: paymasterData.verificationGasLimit,
-    // callGasLimit: paymasterData.callGasLimit,
   };
   console.log("Unsigned UserOp", unsignedUserOp);
 
