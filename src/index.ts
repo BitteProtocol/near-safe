@@ -5,11 +5,7 @@ import yargs from "yargs";
 import { hideBin } from "yargs/helpers";
 import { ContractSuite } from "./safe";
 import { getNearSignature } from "./near";
-import {
-  getPaymasterData,
-  getUserOpReceipt,
-  sendUserOperation,
-} from "./bundler";
+import { Erc4337Bundler } from "./bundler";
 import { assertFunded } from "./util";
 
 dotenv.config();
@@ -31,6 +27,10 @@ async function main() {
   );
 
   const safePack = await ContractSuite.init(provider);
+  const bundler = new Erc4337Bundler(
+    ERC4337_BUNDLER_URL!,
+    await safePack.entryPoint.getAddress(),
+  );
   const owners =
     RECOVERY_ADDRESS !== undefined
       ? [nearAdapter.address, RECOVERY_ADDRESS]
@@ -59,9 +59,7 @@ async function main() {
     safeNotDeployed,
     SAFE_SALT_NONCE || "0",
   );
-  const paymasterData = await getPaymasterData(
-    ERC4337_BUNDLER_URL!,
-    await safePack.entryPoint.getAddress(),
+  const paymasterData = await bundler.getPaymasterData(
     rawUserOp,
     argv.usePaymaster,
     safeNotDeployed,
@@ -77,21 +75,13 @@ async function main() {
   console.log("Signing with Near...");
   const signature = await getNearSignature(nearAdapter, safeOpHash);
 
-  const userOpHash = await sendUserOperation(
-    ERC4337_BUNDLER_URL!,
-    { ...unsignedUserOp, signature },
-    await safePack.entryPoint.getAddress(),
-  );
+  const userOpHash = await bundler.sendUserOperation({
+    ...unsignedUserOp,
+    signature,
+  });
   console.log("UserOp Hash", userOpHash);
 
-  // TODO(bh2smith): use safe4337Pack
-  // https://docs.safe.global/sdk/relay-kit/guides/4337-safe-sdk#check-the-transaction-status
-  let userOpReceipt = null;
-  while (!userOpReceipt) {
-    // Wait 2 seconds before checking the status again
-    await new Promise((resolve) => setTimeout(resolve, 2000));
-    userOpReceipt = await getUserOpReceipt(ERC4337_BUNDLER_URL!, userOpHash);
-  }
+  const userOpReceipt = await bundler.getUserOpReceipt(userOpHash);
   console.log("userOp Receipt", userOpReceipt);
 }
 
