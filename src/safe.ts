@@ -70,7 +70,7 @@ export class ContractSuite {
   async addressForSetup(
     setup: ethers.BytesLike,
     saltNonce?: string,
-  ): Promise<ethers.AddressLike> {
+  ): Promise<string> {
     // bytes32 salt = keccak256(abi.encodePacked(keccak256(initializer), saltNonce));
     // cf: https://github.com/safe-global/safe-smart-account/blob/499b17ad0191b575fcadc5cb5b8e3faeae5391ae/contracts/proxies/SafeProxyFactory.sol#L58
     const salt = ethers.keccak256(
@@ -154,6 +154,7 @@ export class ContractSuite {
   }
 
   async buildUserOp(
+    // TODO: support Multisend
     txData: {
       to: `0x${string}`;
       value?: bigint;

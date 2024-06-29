@@ -26,3 +26,8 @@ export interface PaymasterData {
   callGasLimit: string;
   preVerificationGas: string;
 }
+
+export interface UserOptions {
+  usePaymaster: boolean;
+  recoveryAddress: string | undefined;
+}
