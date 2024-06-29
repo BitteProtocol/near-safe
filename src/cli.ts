@@ -21,6 +21,5 @@ export async function loadArgs(): Promise<UserOptions> {
       default: "0",
     })
     .help()
-    .alias("help", "h")
-    .argv;
+    .alias("help", "h").argv;
 }
