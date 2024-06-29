@@ -6,7 +6,11 @@ dotenv.config();
 
 async function main() {
   const options = await loadArgs();
-  const txManager = await TransactionManager.fromEnv(options);
+  const txManager = await TransactionManager.create({
+    ethRpc: process.env.ETH_RPC!,
+    erc4337BundlerUrl: process.env.ERC4337_BUNDLER_URL!,
+    options,
+  });
   const { unsignedUserOp, safeOpHash } = await txManager.buildTransaction({
     // TODO: Replace dummy transaction.
     transaction: { to: txManager.nearEOA, value: 1n, data: "0x69" },
@@ -15,8 +19,10 @@ async function main() {
   console.log("Unsigned UserOp", unsignedUserOp);
   console.log("Safe Op Hash", safeOpHash);
 
-  // Ensure the Safe is funded if it's not using paymaster.
-  await txManager.assertFunded(options.usePaymaster);
+  if (!options.usePaymaster) {
+    // Ensure the Safe is funded if it's not using paymaster.
+    await txManager.assertFunded();
+  }
 
   console.log("Signing with Near...");
   const signature = await txManager.signTransaction(safeOpHash);

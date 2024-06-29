@@ -1,9 +1,9 @@
 import { ethers } from "ethers";
 import { NearEthAdapter, MultichainContract } from "near-ca";
-import { ContractSuite } from "./safe";
-import { Erc4337Bundler } from "./bundler";
+import { ContractSuite } from "./lib/safe";
+import { Erc4337Bundler } from "./lib/bundler";
 import { packSignature } from "./util";
-import { getNearSignature } from "./near";
+import { getNearSignature } from "./lib/near";
 import { UserOperation, UserOptions } from "./types";
 
 export class TransactionManager {
@@ -39,8 +39,7 @@ export class TransactionManager {
   static async create(config: {
     ethRpc: string;
     erc4337BundlerUrl: string;
-    safeSaltNonce?: string;
-    recoveryAddress?: string;
+    options: UserOptions;
   }): Promise<TransactionManager> {
     const provider = new ethers.JsonRpcProvider(config.ethRpc);
     const [nearAdapter, safePack] = await Promise.all([
@@ -56,16 +55,14 @@ export class TransactionManager {
       config.erc4337BundlerUrl,
       await safePack.entryPoint.getAddress(),
     );
+    let { safeSaltNonce, recoveryAddress } = config.options;
     // TODO(bh2smith): add the recovery as part of the first tx (more deterministic)
     const owners = [
       nearAdapter.address,
-      ...(config.recoveryAddress ? [config.recoveryAddress] : []),
+      ...(recoveryAddress ? [recoveryAddress] : []),
     ];
     const setup = await safePack.getSetup(owners);
-    const safeAddress = await safePack.addressForSetup(
-      setup,
-      config.safeSaltNonce,
-    );
+    const safeAddress = await safePack.addressForSetup(setup, safeSaltNonce);
     const safeNotDeployed = (await provider.getCode(safeAddress)) === "0x";
     console.log(`Safe Address: ${safeAddress} - deployed? ${!safeNotDeployed}`);
     return new TransactionManager(
@@ -75,17 +72,9 @@ export class TransactionManager {
       bundler,
       setup,
       safeAddress,
-      config.safeSaltNonce || "0",
+      safeSaltNonce || "0",
       safeNotDeployed,
     );
-  }
-
-  static async fromEnv(options: UserOptions): Promise<TransactionManager> {
-    return TransactionManager.create({
-      ethRpc: process.env.ETH_RPC!,
-      erc4337BundlerUrl: process.env.ERC4337_BUNDLER_URL!,
-      safeSaltNonce: options.safeSaltNonce,
-    });
   }
 
   get safeNotDeployed(): boolean {
@@ -151,12 +140,12 @@ export class TransactionManager {
     return userOpReceipt;
   }
 
-  async assertFunded(usePaymaster: boolean): Promise<void> {
-    if (this.safeNotDeployed && !usePaymaster) {
+  async assertFunded(): Promise<void> {
+    if (this.safeNotDeployed) {
       const safeBalance = await this.getSafeBalance();
       if (safeBalance === 0n) {
         console.log(
-          `WARN: Undeployed Safe (${this.safeAddress}) must be funded when not using paymaster`,
+          `WARN: Undeployed Safe (${this.safeAddress}) must be funded`,
         );
         process.exit(0);
       }
