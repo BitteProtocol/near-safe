@@ -40,6 +40,7 @@ export class TransactionManager {
     ethRpc: string;
     erc4337BundlerUrl: string;
     safeSaltNonce?: string;
+    recoveryAddress?: string;
   }): Promise<TransactionManager> {
     const provider = new ethers.JsonRpcProvider(config.ethRpc);
     const [nearAdapter, safePack] = await Promise.all([
@@ -55,7 +56,12 @@ export class TransactionManager {
       config.erc4337BundlerUrl,
       await safePack.entryPoint.getAddress(),
     );
-    const setup = await safePack.getSetup([nearAdapter.address]);
+    // TODO(bh2smith): add the recovery as part of the first tx (more deterministic)
+    const owners = [
+      nearAdapter.address,
+      ...(config.recoveryAddress ? [config.recoveryAddress] : []),
+    ];
+    const setup = await safePack.getSetup(owners);
     const safeAddress = await safePack.addressForSetup(
       setup,
       config.safeSaltNonce,
