@@ -14,5 +14,13 @@ export async function loadArgs(): Promise<UserOptions> {
       description:
         "Recovery address to be attached as owner of the Safe (immediately adter deployment)",
       default: undefined,
-    }).argv;
+    })
+    .option("safeSaltNonce", {
+      type: "string",
+      description: "Salt nonce used for the Safe deployment",
+      default: "0",
+    })
+    .help()
+    .alias("help", "h")
+    .argv;
 }

@@ -30,4 +30,5 @@ export interface PaymasterData {
 export interface UserOptions {
   usePaymaster: boolean;
   recoveryAddress: string | undefined;
+  safeSaltNonce: string;
 }

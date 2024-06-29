@@ -74,11 +74,11 @@ export class TransactionManager {
     );
   }
 
-  static async fromEnv(): Promise<TransactionManager> {
+  static async fromEnv(options: UserOptions): Promise<TransactionManager> {
     return TransactionManager.create({
       ethRpc: process.env.ETH_RPC!,
       erc4337BundlerUrl: process.env.ERC4337_BUNDLER_URL!,
-      safeSaltNonce: process.env.SAFE_SALT_NONCE,
+      safeSaltNonce: options.safeSaltNonce,
     });
   }
 
@@ -149,7 +149,9 @@ export class TransactionManager {
     if (this.safeNotDeployed && !usePaymaster) {
       const safeBalance = await this.getSafeBalance();
       if (safeBalance === 0n) {
-        console.log("WARN: Undeployed Safe is must be funded.");
+        console.log(
+          `WARN: Undeployed Safe (${this.safeAddress}) must be funded when not using paymaster`,
+        );
         process.exit(0);
       }
     }
