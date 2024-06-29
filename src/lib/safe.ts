@@ -7,8 +7,8 @@ import {
   getSafe4337ModuleDeployment,
   getSafeModuleSetupDeployment,
 } from "@safe-global/safe-modules-deployments";
-import { PLACEHOLDER_SIG, packGas, packPaymasterData } from "./util";
-import { PaymasterData, UserOperation } from "./types";
+import { PLACEHOLDER_SIG, packGas, packPaymasterData } from "../util";
+import { PaymasterData, UserOperation } from "../types";
 
 /**
  * All contracts used in account creation & execution

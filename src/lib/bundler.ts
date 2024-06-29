@@ -1,6 +1,6 @@
 import { ethers } from "ethers";
-import { PaymasterData, UserOperation } from "./types";
-import { PLACEHOLDER_SIG } from "./util";
+import { PaymasterData, UserOperation } from "../types";
+import { PLACEHOLDER_SIG } from "../util";
 
 export class Erc4337Bundler {
   provider: ethers.JsonRpcProvider;
