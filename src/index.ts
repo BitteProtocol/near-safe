@@ -14,10 +14,13 @@ async function main() {
   });
   console.log("Unsigned UserOp", unsignedUserOp);
   console.log("Safe Op Hash", safeOpHash);
-  // Check that the Safe is funded if it's not using paymaster
+  
+  // Ensure the Safe is funded if it's not using paymaster.
   await txManager.assertFunded(options.usePaymaster);
+  
   console.log("Signing with Near...");
   const signature = await txManager.signTransaction(safeOpHash);
+  
   console.log("Executing UserOp...");
   const userOpReceipt = await txManager.executeTransaction({
     ...unsignedUserOp,
