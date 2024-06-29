@@ -16,13 +16,13 @@ export class Erc4337Bundler {
     usePaymaster: boolean,
     safeNotDeployed: boolean,
   ): Promise<PaymasterData> {
+    // TODO: Keep this option out of the bundler
     if (usePaymaster) {
       console.log("Requesting paymaster data...");
       const data = this.provider.send("pm_sponsorUserOperation", [
         { ...rawUserOp, signature: PLACEHOLDER_SIG },
         this.entryPointAddress,
       ]);
-      console.log("Paymaster Data", data);
       return data;
     }
     return defaultPaymasterData(safeNotDeployed);
