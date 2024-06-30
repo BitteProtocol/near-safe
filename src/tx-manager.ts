@@ -40,7 +40,7 @@ export class TransactionManager {
   static async create(config: {
     ethRpc: string;
     erc4337BundlerUrl: string;
-    options: UserOptions;
+    safeSaltNonce?: string;
   }): Promise<TransactionManager> {
     const provider = new ethers.JsonRpcProvider(config.ethRpc);
     const [nearAdapter, safePack] = await Promise.all([
@@ -56,14 +56,11 @@ export class TransactionManager {
       config.erc4337BundlerUrl,
       await safePack.entryPoint.getAddress(),
     );
-    let { safeSaltNonce, recoveryAddress } = config.options;
-    // TODO(bh2smith): add the recovery as part of the first tx (more deterministic)
-    const owners = [
-      nearAdapter.address,
-      ...(recoveryAddress ? [recoveryAddress] : []),
-    ];
-    const setup = await safePack.getSetup(owners);
-    const safeAddress = await safePack.addressForSetup(setup, safeSaltNonce);
+    const setup = await safePack.getSetup([nearAdapter.address]);
+    const safeAddress = await safePack.addressForSetup(
+      setup,
+      config.safeSaltNonce,
+    );
     const safeNotDeployed = (await provider.getCode(safeAddress)) === "0x";
     console.log(`Safe Address: ${safeAddress} - deployed? ${!safeNotDeployed}`);
     return new TransactionManager(
@@ -73,7 +70,7 @@ export class TransactionManager {
       bundler,
       setup,
       safeAddress,
-      safeSaltNonce || "0",
+      config.safeSaltNonce || "0",
       safeNotDeployed,
     );
   }
@@ -144,15 +141,29 @@ export class TransactionManager {
     return userOpReceipt;
   }
 
-  async assertFunded(): Promise<void> {
-    if (this.safeNotDeployed) {
-      const safeBalance = await this.getSafeBalance();
-      if (safeBalance === 0n) {
-        console.log(
-          `WARN: Undeployed Safe (${this.safeAddress}) must be funded`,
-        );
-        process.exit(0);
-      }
+  addOwnerTx(address: string): MetaTransaction {
+    return {
+      to: this.safeAddress,
+      value: "0",
+      data: this.safePack.singleton.interface.encodeFunctionData(
+        "addOwnerWithThreshold",
+        [address, 1],
+      ),
+    };
+  }
+
+  async safeSufficientlyFunded(
+    transactions: MetaTransaction[],
+    gasCost: bigint,
+  ): Promise<boolean> {
+    const txValue = transactions.reduce(
+      (acc, tx) => acc + BigInt(tx.value),
+      0n,
+    );
+    if (txValue + gasCost === 0n) {
+      return true;
     }
+    const safeBalance = await this.getSafeBalance();
+    return txValue + gasCost < safeBalance;
   }
 }
