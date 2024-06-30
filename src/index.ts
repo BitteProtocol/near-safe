@@ -10,22 +10,23 @@ async function main() {
   const txManager = await TransactionManager.create({
     ethRpc: process.env.ETH_RPC!,
     erc4337BundlerUrl: process.env.ERC4337_BUNDLER_URL!,
-    options,
+    safeSaltNonce: options.safeSaltNonce,
   });
+  const transactions = [
+    // TODO: Replace dummy transaction with real user transaction.
+    {
+      to: "0xbeef4dad00000000000000000000000000000000",
+      value: "1", // 1 wei
+      data: "0xbeef",
+    },
+  ];
+  // Add Recovery if safe not deployed & recoveryAddress was provided.
+  if (txManager.safeNotDeployed && options.recoveryAddress) {
+    const recoveryTx = txManager.addOwnerTx(options.recoveryAddress);
+    transactions.push(recoveryTx);
+  }
   const { unsignedUserOp, safeOpHash } = await txManager.buildTransaction({
-    // TODO: Replace dummy transaction.
-    transactions: [
-      {
-        to: "0x0000000000000000000000000000000000000000",
-        value: "1",
-        data: "0x",
-      },
-      {
-        to: "0x0000000000000000000000000000000000000000",
-        value: "2",
-        data: "0x",
-      },
-    ],
+    transactions,
     options,
   });
   console.log("Unsigned UserOp", unsignedUserOp);

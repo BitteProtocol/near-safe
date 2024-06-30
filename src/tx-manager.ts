@@ -40,7 +40,7 @@ export class TransactionManager {
   static async create(config: {
     ethRpc: string;
     erc4337BundlerUrl: string;
-    options: UserOptions;
+    safeSaltNonce?: string;
   }): Promise<TransactionManager> {
     const provider = new ethers.JsonRpcProvider(config.ethRpc);
     const [nearAdapter, safePack] = await Promise.all([
@@ -56,14 +56,11 @@ export class TransactionManager {
       config.erc4337BundlerUrl,
       await safePack.entryPoint.getAddress(),
     );
-    let { safeSaltNonce, recoveryAddress } = config.options;
-    // TODO(bh2smith): add the recovery as part of the first tx (more deterministic)
-    const owners = [
-      nearAdapter.address,
-      ...(recoveryAddress ? [recoveryAddress] : []),
-    ];
-    const setup = await safePack.getSetup(owners);
-    const safeAddress = await safePack.addressForSetup(setup, safeSaltNonce);
+    const setup = await safePack.getSetup([nearAdapter.address]);
+    const safeAddress = await safePack.addressForSetup(
+      setup,
+      config.safeSaltNonce,
+    );
     const safeNotDeployed = (await provider.getCode(safeAddress)) === "0x";
     console.log(`Safe Address: ${safeAddress} - deployed? ${!safeNotDeployed}`);
     return new TransactionManager(
@@ -73,7 +70,7 @@ export class TransactionManager {
       bundler,
       setup,
       safeAddress,
-      safeSaltNonce || "0",
+      config.safeSaltNonce || "0",
       safeNotDeployed,
     );
   }
@@ -142,6 +139,17 @@ export class TransactionManager {
     this._safeNotDeployed =
       (await this.provider.getCode(this.safeAddress)) === "0x";
     return userOpReceipt;
+  }
+
+  addOwnerTx(address: string): MetaTransaction {
+    return {
+      to: this.safeAddress,
+      value: "0",
+      data: this.safePack.singleton.interface.encodeFunctionData(
+        "addOwnerWithThreshold",
+        [address, 1],
+      ),
+    };
   }
 
   async assertFunded(): Promise<void> {
