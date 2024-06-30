@@ -9,6 +9,7 @@ import {
 } from "@safe-global/safe-modules-deployments";
 import { PLACEHOLDER_SIG, packGas, packPaymasterData } from "../util";
 import { PaymasterData, UserOperation } from "../types";
+import { MetaTransaction } from "ethers-multisend";
 
 /**
  * All contracts used in account creation & execution
@@ -154,12 +155,7 @@ export class ContractSuite {
   }
 
   async buildUserOp(
-    // TODO: support Multisend
-    txData: {
-      to: `0x${string}`;
-      value?: bigint;
-      data?: `0x${string}`;
-    },
+    txData: MetaTransaction,
     safeAddress: ethers.AddressLike,
     feeData: ethers.FeeData,
     setup: string,
@@ -177,9 +173,9 @@ export class ContractSuite {
       // <https://github.com/safe-global/safe-modules/blob/9a18245f546bf2a8ed9bdc2b04aae44f949ec7a0/modules/4337/contracts/Safe4337Module.sol#L172>
       callData: this.m4337.interface.encodeFunctionData("executeUserOp", [
         txData.to,
-        txData.value || 0n,
-        txData.data || "0x",
-        0,
+        BigInt(txData.value),
+        txData.data,
+        txData.operation || 0,
       ]),
       maxPriorityFeePerGas: ethers.toBeHex((maxPriorityFeePerGas * 12n) / 10n),
       maxFeePerGas: ethers.toBeHex(maxFeePerGas),

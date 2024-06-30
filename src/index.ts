@@ -1,6 +1,7 @@
 import dotenv from "dotenv";
 import { TransactionManager } from "./tx-manager";
 import { loadArgs } from "./cli";
+import { ethers } from "ethers";
 
 dotenv.config();
 
@@ -13,7 +14,18 @@ async function main() {
   });
   const { unsignedUserOp, safeOpHash } = await txManager.buildTransaction({
     // TODO: Replace dummy transaction.
-    transaction: { to: txManager.nearEOA, value: 1n, data: "0x69" },
+    transactions: [
+      {
+        to: "0x0000000000000000000000000000000000000000",
+        value: "1",
+        data: "0x",
+      },
+      {
+        to: "0x0000000000000000000000000000000000000000",
+        value: "2",
+        data: "0x",
+      },
+    ],
     options,
   });
   console.log("Unsigned UserOp", unsignedUserOp);
