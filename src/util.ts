@@ -1,5 +1,6 @@
 import { ethers } from "ethers";
 import { PaymasterData } from "./types";
+import { MetaTransaction } from "ethers-multisend";
 
 export const PLACEHOLDER_SIG = ethers.solidityPacked(
   ["uint48", "uint48"],
@@ -31,4 +32,8 @@ export function packPaymasterData(data: PaymasterData) {
         ]),
       )
     : "0x";
+}
+
+export function containsValue(transactions: MetaTransaction[]): boolean {
+  return transactions.some((tx) => tx.value !== "0");
 }

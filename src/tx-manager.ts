@@ -152,15 +152,18 @@ export class TransactionManager {
     };
   }
 
-  async assertFunded(): Promise<void> {
-    if (this.safeNotDeployed) {
-      const safeBalance = await this.getSafeBalance();
-      if (safeBalance === 0n) {
-        console.log(
-          `WARN: Undeployed Safe (${this.safeAddress}) must be funded`,
-        );
-        process.exit(0);
-      }
+  async safeSufficientlyFunded(
+    transactions: MetaTransaction[],
+    gasCost: bigint,
+  ): Promise<boolean> {
+    const txValue = transactions.reduce(
+      (acc, tx) => acc + BigInt(tx.value),
+      0n,
+    );
+    if (txValue + gasCost === 0n) {
+      return true;
     }
+    const safeBalance = await this.getSafeBalance();
+    return txValue + gasCost < safeBalance;
   }
 }
