@@ -5,6 +5,7 @@ import { Erc4337Bundler } from "./lib/bundler";
 import { packSignature } from "./util";
 import { getNearSignature } from "./lib/near";
 import { UserOperation, UserOptions } from "./types";
+import { MetaTransaction, encodeMulti } from "ethers-multisend";
 
 export class TransactionManager {
   readonly provider: ethers.JsonRpcProvider;
@@ -90,13 +91,16 @@ export class TransactionManager {
   }
 
   async buildTransaction(args: {
-    transaction: { to: `0x${string}`; value: bigint; data: `0x${string}` };
+    transactions: MetaTransaction[];
     options: UserOptions;
   }): Promise<{ safeOpHash: string; unsignedUserOp: UserOperation }> {
+    const { transactions, options } = args;
     const gasFees = await this.provider.getFeeData();
-    const { to, value, data } = args.transaction;
+    // Build Singular MetaTransaction for Multisend from transaction list.
+    const tx =
+      transactions.length > 1 ? encodeMulti(transactions) : transactions[0];
     const rawUserOp = await this.safePack.buildUserOp(
-      { to, value, data },
+      tx,
       this.safeAddress,
       gasFees,
       this.setup,
@@ -106,7 +110,7 @@ export class TransactionManager {
 
     const paymasterData = await this.bundler.getPaymasterData(
       rawUserOp,
-      args.options.usePaymaster,
+      options.usePaymaster,
       this.safeNotDeployed,
     );
 

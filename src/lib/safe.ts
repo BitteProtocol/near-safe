@@ -9,6 +9,7 @@ import {
 } from "@safe-global/safe-modules-deployments";
 import { PLACEHOLDER_SIG, packGas, packPaymasterData } from "../util";
 import { PaymasterData, UserOperation } from "../types";
+import { MetaTransaction } from "ethers-multisend";
 
 /**
  * All contracts used in account creation & execution
@@ -154,12 +155,7 @@ export class ContractSuite {
   }
 
   async buildUserOp(
-    // TODO: support Multisend
-    txData: {
-      to: `0x${string}`;
-      value?: bigint;
-      data?: `0x${string}`;
-    },
+    txData: MetaTransaction,
     safeAddress: ethers.AddressLike,
     feeData: ethers.FeeData,
     setup: string,
