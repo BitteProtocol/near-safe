@@ -1,11 +1,11 @@
 import { ethers } from "ethers";
 import { NearEthAdapter, MultichainContract } from "near-ca";
-import { ContractSuite } from "./lib/safe";
-import { Erc4337Bundler } from "./lib/bundler";
-import { packSignature } from "./util";
-import { getNearSignature } from "./lib/near";
-import { UserOperation, UserOperationReceipt, UserOptions } from "./types";
+import { Erc4337Bundler } from "./lib/bundler.js";
+import { packSignature } from "./util.js";
+import { getNearSignature } from "./lib/near.js";
+import { UserOperation, UserOperationReceipt, UserOptions } from "./types.js";
 import { MetaTransaction, encodeMulti } from "ethers-multisend";
+import { ContractSuite } from "./lib/safe.js";
 
 export class TransactionManager {
   readonly provider: ethers.JsonRpcProvider;

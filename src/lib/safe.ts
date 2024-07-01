@@ -7,8 +7,12 @@ import {
   getSafe4337ModuleDeployment,
   getSafeModuleSetupDeployment,
 } from "@safe-global/safe-modules-deployments";
-import { PLACEHOLDER_SIG, packGas, packPaymasterData } from "../util";
-import { PaymasterData, UnsignedUserOperation, UserOperation } from "../types";
+import { PLACEHOLDER_SIG, packGas, packPaymasterData } from "../util.js";
+import {
+  PaymasterData,
+  UnsignedUserOperation,
+  UserOperation,
+} from "../types.js";
 import { MetaTransaction } from "ethers-multisend";
 
 /**

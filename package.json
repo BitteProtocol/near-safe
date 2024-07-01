@@ -1,18 +1,26 @@
 {
   "name": "near-safe",
   "version": "0.0.0",
+  "module": "index.ts",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist/**/*"
+  ],
   "private": true,
   "scripts": {
-    "start": "ts-node src/index.ts",
-    "lint": "eslint .",
-    "fmt": "prettier -w ."
+    "build": "rm -rf ./dist && tsc",
+    "example": "tsx examples/send-tx.ts",
+    "lint": "eslint . --ignore-pattern dist/",
+    "fmt": "prettier --write '{src,examples,tests}/**/*.{js,jsx,ts,tsx}'",
+    "all": "yarn fmt && yarn lint && yarn build && yarn ex"
   },
   "dependencies": {
     "@safe-global/safe-deployments": "^1.37.0",
     "@safe-global/safe-modules-deployments": "^2.2.0",
     "ethers": "^6.13.1",
     "ethers-multisend": "^3.1.0",
-    "near-ca": "^0.0.10-alpha.1",
+    "near-ca": "^0.1.0",
     "yargs": "^17.7.2"
   },
   "devDependencies": {
@@ -23,7 +31,7 @@
     "dotenv": "^16.4.5",
     "eslint": "^9.6.0",
     "prettier": "^3.3.2",
-    "ts-node": "^10.9.2",
+    "tsx": "^4.16.0",
     "typescript": "^5.5.2"
   }
 }
