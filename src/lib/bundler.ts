@@ -4,8 +4,8 @@ import {
   UnsignedUserOperation,
   UserOperation,
   UserOperationReceipt,
-} from "../types";
-import { PLACEHOLDER_SIG } from "../util";
+} from "../types.js";
+import { PLACEHOLDER_SIG } from "../util.js";
 
 export class Erc4337Bundler {
   provider: ethers.JsonRpcProvider;

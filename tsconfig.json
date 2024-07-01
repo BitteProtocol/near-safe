@@ -1,14 +1,14 @@
 {
   "compilerOptions": {
     "target": "ES2020",
-    "module": "ESNext",
+    "module": "ES6",
     "moduleResolution": "Node",
+    "esModuleInterop": true,
 
     /* Emit */
     "declaration": true,
     "outDir": "./dist",
     "allowSyntheticDefaultImports": true,
-    "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
 
     /* Type Checking */
@@ -23,5 +23,5 @@
     /* Completeness */
     "skipLibCheck": true /* Skip type checking all .d.ts files. */
   },
-  "exclude": ["node_modules", "dist", "examples", "tests", "eslint.config.js"]
+  "exclude": ["node_modules", "dist", "examples", "tests", "eslint.config.cjs"]
 }

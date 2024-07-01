@@ -10,17 +10,17 @@
   "private": true,
   "scripts": {
     "build": "rm -rf ./dist && tsc",
-    "example": "ts-node-esm examples/send-tx.ts",
-    "ex2": "ts-node examples/send-tx.ts",
+    "ex": "tsx examples/send-tx.ts",
     "lint": "eslint . --ignore-pattern dist/",
-    "fmt": "prettier --write '{src,examples,tests}/**/*.{js,jsx,ts,tsx}'"
+    "fmt": "prettier --write '{src,examples,tests}/**/*.{js,jsx,ts,tsx}'",
+    "all": "yarn fmt && yarn lint && yarn build && yarn ex"
   },
   "dependencies": {
     "@safe-global/safe-deployments": "^1.37.0",
     "@safe-global/safe-modules-deployments": "^2.2.0",
     "ethers": "^6.13.1",
     "ethers-multisend": "^3.1.0",
-    "near-ca": "^0.0.9",
+    "near-ca": "^0.0.10-alpha.4",
     "yargs": "^17.7.2"
   },
   "devDependencies": {
@@ -31,7 +31,7 @@
     "dotenv": "^16.4.5",
     "eslint": "^9.6.0",
     "prettier": "^3.3.2",
-    "ts-node": "^10.9.2",
+    "tsx": "^4.16.0",
     "typescript": "^5.5.2"
   }
 }
