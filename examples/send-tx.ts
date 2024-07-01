@@ -1,7 +1,7 @@
 import dotenv from "dotenv";
 import { ethers } from "ethers";
 import { loadArgs } from "./cli";
-import { TransactionManager } from "../src";
+import { TransactionManager } from "../dist";
 
 dotenv.config();
 

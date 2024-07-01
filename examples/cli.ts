@@ -1,6 +1,6 @@
 import yargs from "yargs";
 import { hideBin } from "yargs/helpers";
-import { UserOptions } from "../src";
+import { UserOptions } from "../dist";
 
 export async function loadArgs(): Promise<UserOptions> {
   return yargs(hideBin(process.argv))
