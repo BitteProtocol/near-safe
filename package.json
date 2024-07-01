@@ -3,9 +3,10 @@
   "version": "0.0.0",
   "private": true,
   "scripts": {
-    "start": "ts-node src/index.ts",
-    "lint": "eslint .",
-    "fmt": "prettier -w ."
+    "build": "rm -rf ./dist && tsc",
+    "example": "ts-node examples/send-tx.ts",
+    "lint": "eslint . --ignore-pattern dist/",
+    "fmt": "prettier --write '{src,examples,tests}/**/*.{js,jsx,ts,tsx}'"
   },
   "dependencies": {
     "@safe-global/safe-deployments": "^1.37.0",
