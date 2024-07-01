@@ -13,8 +13,7 @@
     "example": "ts-node-esm examples/send-tx.ts",
     "ex2": "ts-node examples/send-tx.ts",
     "lint": "eslint . --ignore-pattern dist/",
-    "fmt": "prettier --write '{src,examples,tests}/**/*.{js,jsx,ts,tsx}'",
-    "verify": "yarn lint && yarn build"
+    "fmt": "prettier --write '{src,examples,tests}/**/*.{js,jsx,ts,tsx}'"
   },
   "dependencies": {
     "@safe-global/safe-deployments": "^1.37.0",

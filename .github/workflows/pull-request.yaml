@@ -17,5 +17,8 @@ jobs:
         with:
           node-version: "20"
 
-      - name: Install & Lint
-        run: yarn && yarn lint
+      - name: Install, Lint & Build
+        run: |
+          yarn 
+          yarn lint
+          yarn build
