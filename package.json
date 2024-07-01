@@ -10,7 +10,7 @@
   "private": true,
   "scripts": {
     "build": "rm -rf ./dist && tsc",
-    "ex": "tsx examples/send-tx.ts",
+    "example": "tsx examples/send-tx.ts",
     "lint": "eslint . --ignore-pattern dist/",
     "fmt": "prettier --write '{src,examples,tests}/**/*.{js,jsx,ts,tsx}'",
     "all": "yarn fmt && yarn lint && yarn build && yarn ex"
@@ -20,7 +20,7 @@
     "@safe-global/safe-modules-deployments": "^2.2.0",
     "ethers": "^6.13.1",
     "ethers-multisend": "^3.1.0",
-    "near-ca": "^0.0.10-alpha.4",
+    "near-ca": "^0.1.0",
     "yargs": "^17.7.2"
   },
   "devDependencies": {
