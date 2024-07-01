@@ -1,5 +1,10 @@
 import { ethers } from "ethers";
-import { PaymasterData, UserOperation } from "../types";
+import {
+  PaymasterData,
+  UnsignedUserOperation,
+  UserOperation,
+  UserOperationReceipt,
+} from "../types";
 import { PLACEHOLDER_SIG } from "../util";
 
 export class Erc4337Bundler {
@@ -12,9 +17,9 @@ export class Erc4337Bundler {
   }
 
   async getPaymasterData(
-    rawUserOp: any,
+    rawUserOp: UnsignedUserOperation,
     usePaymaster: boolean,
-    safeNotDeployed: boolean,
+    safeNotDeployed: boolean
   ): Promise<PaymasterData> {
     // TODO: Keep this option out of the bundler
     if (usePaymaster) {
@@ -41,12 +46,14 @@ export class Erc4337Bundler {
     }
   }
 
-  async _getUserOpReceiptInner(userOpHash: string) {
+  async _getUserOpReceiptInner(
+    userOpHash: string
+  ): Promise<UserOperationReceipt | null> {
     return this.provider.send("eth_getUserOperationReceipt", [userOpHash]);
   }
 
-  async getUserOpReceipt(userOpHash: string) {
-    let userOpReceipt = null;
+  async getUserOpReceipt(userOpHash: string): Promise<UserOperationReceipt> {
+    let userOpReceipt: UserOperationReceipt | null = null;
     while (!userOpReceipt) {
       // Wait 2 seconds before checking the status again
       await new Promise((resolve) => setTimeout(resolve, 2000));
@@ -57,7 +64,7 @@ export class Erc4337Bundler {
 }
 
 // TODO(bh2smith) Should probably get reasonable estimates here:
-const defaultPaymasterData = (safeNotDeployed: boolean) => {
+const defaultPaymasterData = (safeNotDeployed: boolean): PaymasterData => {
   return {
     verificationGasLimit: ethers.toBeHex(safeNotDeployed ? 500000 : 100000),
     callGasLimit: ethers.toBeHex(100000),

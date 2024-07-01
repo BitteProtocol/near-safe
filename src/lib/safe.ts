@@ -8,7 +8,7 @@ import {
   getSafeModuleSetupDeployment,
 } from "@safe-global/safe-modules-deployments";
 import { PLACEHOLDER_SIG, packGas, packPaymasterData } from "../util";
-import { PaymasterData, UserOperation } from "../types";
+import { PaymasterData, UnsignedUserOperation, UserOperation } from "../types";
 import { MetaTransaction } from "ethers-multisend";
 
 /**
@@ -28,7 +28,7 @@ export class ContractSuite {
     proxyFactory: ethers.Contract,
     m4337: ethers.Contract,
     moduleSetup: ethers.Contract,
-    entryPoint: ethers.Contract,
+    entryPoint: ethers.Contract
   ) {
     this.provider = provider;
     this.singleton = singleton;
@@ -39,9 +39,11 @@ export class ContractSuite {
   }
 
   static async init(provider: ethers.JsonRpcProvider): Promise<ContractSuite> {
-    const safeDeployment = (fn: DeploymentFunction) =>
+    const safeDeployment = (fn: DeploymentFunction): Promise<ethers.Contract> =>
       getDeployment(fn, { provider, version: "1.4.1" });
-    const m4337Deployment = (fn: DeploymentFunction) =>
+    const m4337Deployment = (
+      fn: DeploymentFunction
+    ): Promise<ethers.Contract> =>
       getDeployment(fn, { provider, version: "0.3.0" });
     // Need this first to get entryPoint address
     const m4337 = await m4337Deployment(getSafe4337ModuleDeployment);
@@ -55,8 +57,8 @@ export class ContractSuite {
       ]);
     const entryPoint = new ethers.Contract(
       supportedEntryPoint,
-      [`function getNonce(address, uint192 key) view returns (uint256 nonce)`],
-      provider,
+      ["function getNonce(address, uint192 key) view returns (uint256 nonce)"],
+      provider
     );
     return new ContractSuite(
       provider,
@@ -64,21 +66,21 @@ export class ContractSuite {
       proxyFactory,
       m4337,
       moduleSetup,
-      entryPoint,
+      entryPoint
     );
   }
 
   async addressForSetup(
     setup: ethers.BytesLike,
-    saltNonce?: string,
+    saltNonce?: string
   ): Promise<string> {
     // bytes32 salt = keccak256(abi.encodePacked(keccak256(initializer), saltNonce));
     // cf: https://github.com/safe-global/safe-smart-account/blob/499b17ad0191b575fcadc5cb5b8e3faeae5391ae/contracts/proxies/SafeProxyFactory.sol#L58
     const salt = ethers.keccak256(
       ethers.solidityPacked(
         ["bytes32", "uint256"],
-        [ethers.keccak256(setup), saltNonce || 0],
-      ),
+        [ethers.keccak256(setup), saltNonce || 0]
+      )
     );
 
     // abi.encodePacked(type(SafeProxy).creationCode, uint256(uint160(_singleton)));
@@ -88,12 +90,12 @@ export class ContractSuite {
       [
         await this.proxyFactory.proxyCreationCode(),
         await this.singleton.getAddress(),
-      ],
+      ]
     );
     return ethers.getCreate2Address(
       await this.proxyFactory.getAddress(),
       salt,
-      ethers.keccak256(initCode),
+      ethers.keccak256(initCode)
     );
   }
 
@@ -115,23 +117,23 @@ export class ContractSuite {
 
   async getOpHash(
     unsignedUserOp: UserOperation,
-    paymasterData: PaymasterData,
+    paymasterData: PaymasterData
   ): Promise<string> {
     return this.m4337.getOperationHash({
       ...unsignedUserOp,
       initCode: unsignedUserOp.factory
         ? ethers.solidityPacked(
             ["address", "bytes"],
-            [unsignedUserOp.factory, unsignedUserOp.factoryData],
+            [unsignedUserOp.factory, unsignedUserOp.factoryData]
           )
         : "0x",
       accountGasLimits: packGas(
         unsignedUserOp.verificationGasLimit,
-        unsignedUserOp.callGasLimit,
+        unsignedUserOp.callGasLimit
       ),
       gasFees: packGas(
         unsignedUserOp.maxPriorityFeePerGas,
-        unsignedUserOp.maxFeePerGas,
+        unsignedUserOp.maxFeePerGas
       ),
       paymasterAndData: packPaymasterData(paymasterData),
       signature: PLACEHOLDER_SIG,
@@ -141,14 +143,14 @@ export class ContractSuite {
   factoryDataForSetup(
     safeNotDeployed: boolean,
     setup: string,
-    safeSaltNonce: string,
+    safeSaltNonce: string
   ): { factory?: ethers.AddressLike; factoryData?: string } {
     return safeNotDeployed
       ? {
           factory: this.proxyFactory.target,
           factoryData: this.proxyFactory.interface.encodeFunctionData(
             "createProxyWithNonce",
-            [this.singleton.target, setup, safeSaltNonce],
+            [this.singleton.target, setup, safeSaltNonce]
           ),
         }
       : {};
@@ -160,8 +162,8 @@ export class ContractSuite {
     feeData: ethers.FeeData,
     setup: string,
     safeNotDeployed: boolean,
-    safeSaltNonce: string,
-  ): Promise<any> {
+    safeSaltNonce: string
+  ): Promise<UnsignedUserOperation> {
     const { maxPriorityFeePerGas, maxFeePerGas } = feeData;
     if (!maxPriorityFeePerGas || !maxFeePerGas) {
       throw new Error("no gas fee data");
@@ -193,18 +195,18 @@ type DeploymentArgs = { provider: ethers.JsonRpcProvider; version: string };
 
 async function getDeployment(
   fn: DeploymentFunction,
-  { provider, version }: DeploymentArgs,
-) {
+  { provider, version }: DeploymentArgs
+): Promise<ethers.Contract> {
   const { chainId } = await provider.getNetwork();
   const deployment = fn({ version });
   if (!deployment || !deployment.networkAddresses[`${chainId}`]) {
     throw new Error(
-      `Deployment not found for version ${version} and chainId ${chainId}`,
+      `Deployment not found for version ${version} and chainId ${chainId}`
     );
   }
   return new ethers.Contract(
     deployment.networkAddresses[`${chainId}`],
     deployment.abi as ethers.Fragment[],
-    provider,
+    provider
   );
 }

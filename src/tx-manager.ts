@@ -4,7 +4,7 @@ import { ContractSuite } from "./lib/safe";
 import { Erc4337Bundler } from "./lib/bundler";
 import { packSignature } from "./util";
 import { getNearSignature } from "./lib/near";
-import { UserOperation, UserOptions } from "./types";
+import { UserOperation, UserOperationReceipt, UserOptions } from "./types";
 import { MetaTransaction, encodeMulti } from "ethers-multisend";
 
 export class TransactionManager {
@@ -25,7 +25,7 @@ export class TransactionManager {
     setup: string,
     safeAddress: string,
     safeSaltNonce: string,
-    safeNotDeployed: boolean,
+    safeNotDeployed: boolean
   ) {
     this.provider = provider;
     this.nearAdapter = nearAdapter;
@@ -50,16 +50,16 @@ export class TransactionManager {
       ContractSuite.init(provider),
     ]);
     console.log(
-      `Near Adapter: ${nearAdapter.nearAccountId()} <> ${nearAdapter.address}`,
+      `Near Adapter: ${nearAdapter.nearAccountId()} <> ${nearAdapter.address}`
     );
     const bundler = new Erc4337Bundler(
       config.erc4337BundlerUrl,
-      await safePack.entryPoint.getAddress(),
+      await safePack.entryPoint.getAddress()
     );
     const setup = await safePack.getSetup([nearAdapter.address]);
     const safeAddress = await safePack.addressForSetup(
       setup,
-      config.safeSaltNonce,
+      config.safeSaltNonce
     );
     const safeNotDeployed = (await provider.getCode(safeAddress)) === "0x";
     console.log(`Safe Address: ${safeAddress} - deployed? ${!safeNotDeployed}`);
@@ -71,7 +71,7 @@ export class TransactionManager {
       setup,
       safeAddress,
       config.safeSaltNonce || "0",
-      safeNotDeployed,
+      safeNotDeployed
     );
   }
 
@@ -102,19 +102,19 @@ export class TransactionManager {
       gasFees,
       this.setup,
       this.safeNotDeployed,
-      this.safeSaltNonce,
+      this.safeSaltNonce
     );
 
     const paymasterData = await this.bundler.getPaymasterData(
       rawUserOp,
       options.usePaymaster,
-      this.safeNotDeployed,
+      this.safeNotDeployed
     );
 
     const unsignedUserOp = { ...rawUserOp, ...paymasterData };
     const safeOpHash = await this.safePack.getOpHash(
       unsignedUserOp,
-      paymasterData,
+      paymasterData
     );
 
     return {
@@ -128,7 +128,9 @@ export class TransactionManager {
     return packSignature(signature);
   }
 
-  async executeTransaction(userOp: UserOperation) {
+  async executeTransaction(
+    userOp: UserOperation
+  ): Promise<UserOperationReceipt> {
     const userOpHash = await this.bundler.sendUserOperation(userOp);
     console.log("UserOp Hash", userOpHash);
 
@@ -147,18 +149,18 @@ export class TransactionManager {
       value: "0",
       data: this.safePack.singleton.interface.encodeFunctionData(
         "addOwnerWithThreshold",
-        [address, 1],
+        [address, 1]
       ),
     };
   }
 
   async safeSufficientlyFunded(
     transactions: MetaTransaction[],
-    gasCost: bigint,
+    gasCost: bigint
   ): Promise<boolean> {
     const txValue = transactions.reduce(
       (acc, tx) => acc + BigInt(tx.value),
-      0n,
+      0n
     );
     if (txValue + gasCost === 0n) {
       return true;

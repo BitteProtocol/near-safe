@@ -1,12 +1,11 @@
 import dotenv from "dotenv";
 import { TransactionManager } from "./tx-manager";
 import { loadArgs } from "./cli";
-import { containsValue } from "./util";
 import { ethers } from "ethers";
 
 dotenv.config();
 
-async function main() {
+async function main(): Promise<void> {
   const options = await loadArgs();
   const txManager = await TransactionManager.create({
     ethRpc: process.env.ETH_RPC!,
@@ -40,11 +39,11 @@ async function main() {
   // Whenever not using paymaster, or on value transfer, the Safe must be funded.
   const sufficientFunded = await txManager.safeSufficientlyFunded(
     transactions,
-    options.usePaymaster ? 0n : gasCost,
+    options.usePaymaster ? 0n : gasCost
   );
   if (!sufficientFunded) {
     console.warn(
-      `Safe ${txManager.safeAddress} insufficiently funded to perform this transaction. Exiting...`,
+      `Safe ${txManager.safeAddress} insufficiently funded to perform this transaction. Exiting...`
     );
     process.exit(0); // soft exit with warning!
   }
