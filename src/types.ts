@@ -30,6 +30,12 @@ export interface PaymasterData {
   preVerificationGas: string;
 }
 
+export interface UserOptions {
+  usePaymaster: boolean;
+  recoveryAddress: string | undefined;
+  safeSaltNonce: string;
+}
+
 export type TStatus = "success" | "reverted";
 export type Address = ethers.AddressLike;
 export type Hex = `0x${string}`;
@@ -74,9 +80,3 @@ export type UserOperationReceipt = {
   receipt: Receipt;
   logs: Log[];
 };
-
-export interface UserOptions {
-  usePaymaster: boolean;
-  recoveryAddress: string | undefined;
-  safeSaltNonce: string;
-}
