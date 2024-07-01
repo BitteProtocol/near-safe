@@ -1,5 +1,6 @@
 import { ethers } from "ethers";
 import {
+  GasPrices,
   PaymasterData,
   UnsignedUserOperation,
   UserOperation,
@@ -44,6 +45,10 @@ export class Erc4337Bundler {
       const error = (err as ethers.JsonRpcError).error;
       throw new Error(`Failed to send user op with: ${error.message}`);
     }
+  }
+
+  async getGasPrice(): Promise<GasPrices> {
+    return this.provider.send("pimlico_getUserOperationGasPrice", []);
   }
 
   async _getUserOpReceiptInner(

@@ -80,3 +80,14 @@ export type UserOperationReceipt = {
   receipt: Receipt;
   logs: Log[];
 };
+
+export interface GasPrices {
+  slow: GasPrice;
+  standard: GasPrice;
+  fast: GasPrice;
+}
+
+export interface GasPrice {
+  maxFeePerGas: Hex;
+  maxPriorityFeePerGas: Hex;
+}
