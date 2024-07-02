@@ -6,7 +6,7 @@ import { getNearSignature } from "./lib/near.js";
 import { UserOperation, UserOperationReceipt, UserOptions } from "./types.js";
 import { MetaTransaction, encodeMulti } from "ethers-multisend";
 import { ContractSuite } from "./lib/safe.js";
-import { Hex } from "viem";
+import { Address, Hex } from "viem";
 
 export class TransactionManager {
   readonly provider: ethers.JsonRpcProvider;
@@ -14,7 +14,7 @@ export class TransactionManager {
   private safePack: ContractSuite;
   private bundler: Erc4337Bundler;
   private setup: string;
-  readonly safeAddress: string;
+  readonly safeAddress: Address;
   private safeSaltNonce: string;
   private _safeNotDeployed: boolean;
 
@@ -24,7 +24,7 @@ export class TransactionManager {
     safePack: ContractSuite,
     bundler: Erc4337Bundler,
     setup: string,
-    safeAddress: string,
+    safeAddress: Address,
     safeSaltNonce: string,
     safeNotDeployed: boolean
   ) {
@@ -125,7 +125,7 @@ export class TransactionManager {
     };
   }
 
-  async signTransaction(safeOpHash: Hex): Promise<string> {
+  async signTransaction(safeOpHash: Hex): Promise<Hex> {
     const signature = await getNearSignature(this.nearAdapter, safeOpHash);
     return packSignature(signature);
   }
