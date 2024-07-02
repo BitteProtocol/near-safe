@@ -9,6 +9,7 @@ import {
 } from "@safe-global/safe-modules-deployments";
 import { PLACEHOLDER_SIG, packGas, packPaymasterData } from "../util.js";
 import {
+  GasPrice,
   PaymasterData,
   UnsignedUserOperation,
   UserOperation,
@@ -163,15 +164,11 @@ export class ContractSuite {
   async buildUserOp(
     txData: MetaTransaction,
     safeAddress: ethers.AddressLike,
-    feeData: ethers.FeeData,
+    feeData: GasPrice,
     setup: string,
     safeNotDeployed: boolean,
     safeSaltNonce: string
   ): Promise<UnsignedUserOperation> {
-    const { maxPriorityFeePerGas, maxFeePerGas } = feeData;
-    if (!maxPriorityFeePerGas || !maxFeePerGas) {
-      throw new Error("no gas fee data");
-    }
     const rawUserOp = {
       sender: safeAddress,
       nonce: ethers.toBeHex(await this.entryPoint.getNonce(safeAddress, 0)),
@@ -183,8 +180,7 @@ export class ContractSuite {
         txData.data,
         txData.operation || 0,
       ]),
-      maxPriorityFeePerGas: ethers.toBeHex((maxPriorityFeePerGas * 12n) / 10n),
-      maxFeePerGas: ethers.toBeHex(maxFeePerGas),
+      ...feeData,
     };
     return rawUserOp;
   }

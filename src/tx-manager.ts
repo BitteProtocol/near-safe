@@ -92,7 +92,8 @@ export class TransactionManager {
     options: UserOptions;
   }): Promise<{ safeOpHash: string; unsignedUserOp: UserOperation }> {
     const { transactions, options } = args;
-    const gasFees = await this.provider.getFeeData();
+    const gasFees = (await this.bundler.getGasPrice()).fast;
+    // const gasFees = await this.provider.getFeeData();
     // Build Singular MetaTransaction for Multisend from transaction list.
     const tx =
       transactions.length > 1 ? encodeMulti(transactions) : transactions[0];
