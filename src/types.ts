@@ -1,4 +1,5 @@
 import { ethers } from "ethers";
+import { Address } from "viem";
 
 export interface UnsignedUserOperation {
   sender: ethers.AddressLike;
@@ -21,13 +22,13 @@ export interface UserOperation extends UnsignedUserOperation {
 }
 
 export interface PaymasterData {
-  paymaster?: string;
-  paymasterData?: string;
-  paymasterVerificationGasLimit?: string;
-  paymasterPostOpGasLimit?: string;
-  verificationGasLimit: string;
-  callGasLimit: string;
-  preVerificationGas: string;
+  paymaster?: Address;
+  paymasterData?: Hex;
+  paymasterVerificationGasLimit?: Hex;
+  paymasterPostOpGasLimit?: Hex;
+  verificationGasLimit: Hex;
+  callGasLimit: Hex;
+  preVerificationGas: Hex;
 }
 
 export interface UserOptions {
@@ -37,7 +38,6 @@ export interface UserOptions {
 }
 
 export type TStatus = "success" | "reverted";
-export type Address = ethers.AddressLike;
 export type Hex = `0x${string}`;
 export type Hash = `0x${string}`;
 
