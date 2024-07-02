@@ -123,7 +123,7 @@ export class ContractSuite {
   async getOpHash(
     unsignedUserOp: UserOperation,
     paymasterData: PaymasterData
-  ): Promise<string> {
+  ): Promise<`0x${string}`> {
     return this.m4337.getOperationHash({
       ...unsignedUserOp,
       initCode: unsignedUserOp.factory

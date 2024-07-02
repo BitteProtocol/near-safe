@@ -1,13 +1,13 @@
 import { ethers } from "ethers";
 import { NearEthAdapter } from "near-ca";
+import { Hash, Hex } from "viem";
 
 export async function getNearSignature(
   adapter: NearEthAdapter,
-  hash: ethers.BytesLike
-): Promise<string> {
-  const viemHash = typeof hash === "string" ? (hash as `0x${string}`) : hash;
+  hash: Hash
+): Promise<Hex> {
   // MPC Contract produces two possible signatures.
-  const signatures = await adapter.sign(viemHash);
+  const signatures = await adapter.sign(hash);
   for (const sig of signatures) {
     if (
       ethers.recoverAddress(hash, sig).toLocaleLowerCase() ===

@@ -7,6 +7,7 @@ import {
   UserOperationReceipt,
 } from "../types.js";
 import { PLACEHOLDER_SIG } from "../util.js";
+import { toHex } from "viem";
 
 export class Erc4337Bundler {
   provider: ethers.JsonRpcProvider;
@@ -71,8 +72,8 @@ export class Erc4337Bundler {
 // TODO(bh2smith) Should probably get reasonable estimates here:
 const defaultPaymasterData = (safeNotDeployed: boolean): PaymasterData => {
   return {
-    verificationGasLimit: ethers.toBeHex(safeNotDeployed ? 500000 : 100000),
-    callGasLimit: ethers.toBeHex(100000),
-    preVerificationGas: ethers.toBeHex(100000),
+    verificationGasLimit: toHex(safeNotDeployed ? 500000 : 100000),
+    callGasLimit: toHex(100000),
+    preVerificationGas: toHex(100000),
   };
 };
