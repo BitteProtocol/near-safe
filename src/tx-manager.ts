@@ -6,6 +6,7 @@ import { getNearSignature } from "./lib/near.js";
 import { UserOperation, UserOperationReceipt, UserOptions } from "./types.js";
 import { MetaTransaction, encodeMulti } from "ethers-multisend";
 import { ContractSuite } from "./lib/safe.js";
+import { Account } from "near-api-js";
 
 export class TransactionManager {
   readonly provider: ethers.JsonRpcProvider;
@@ -40,12 +41,17 @@ export class TransactionManager {
   static async create(config: {
     ethRpc: string;
     erc4337BundlerUrl: string;
+    nearAccount: Account;
     safeSaltNonce?: string;
+    mpcContractId?: string;
   }): Promise<TransactionManager> {
     const provider = new ethers.JsonRpcProvider(config.ethRpc);
     const [nearAdapter, safePack] = await Promise.all([
       NearEthAdapter.fromConfig({
-        mpcContract: await MultichainContract.fromEnv(),
+        mpcContract: new MultichainContract(
+          config.nearAccount,
+          config.mpcContractId
+        ),
       }),
       ContractSuite.init(provider),
     ]);
