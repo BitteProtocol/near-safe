@@ -32,8 +32,9 @@ export interface PaymasterData {
 
 export interface UserOptions {
   usePaymaster: boolean;
-  recoveryAddress: string | undefined;
+  recoveryAddress?: string;
   safeSaltNonce: string;
+  mpcContractId?: string;
 }
 
 export type TStatus = "success" | "reverted";
