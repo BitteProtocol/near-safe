@@ -7,14 +7,12 @@ export async function getNearSignature(
 ): Promise<string> {
   const viemHash = typeof hash === "string" ? (hash as `0x${string}`) : hash;
   // MPC Contract produces two possible signatures.
-  const signatures = await adapter.sign(viemHash);
-  for (const sig of signatures) {
-    if (
-      ethers.recoverAddress(hash, sig).toLocaleLowerCase() ===
-      adapter.address.toLocaleLowerCase()
-    ) {
-      return sig;
-    }
+  const signature = await adapter.sign(viemHash);
+  if (
+    ethers.recoverAddress(hash, signature).toLocaleLowerCase() ===
+    adapter.address.toLocaleLowerCase()
+  ) {
+    return signature;
   }
   throw new Error("Invalid signature!");
 }

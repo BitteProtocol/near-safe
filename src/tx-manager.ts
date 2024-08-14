@@ -1,5 +1,5 @@
 import { ethers } from "ethers";
-import { NearEthAdapter, MultichainContract } from "near-ca";
+import { NearEthAdapter, MpcContract } from "near-ca";
 import { Erc4337Bundler } from "./lib/bundler.js";
 import { packSignature } from "./util.js";
 import { getNearSignature } from "./lib/near.js";
@@ -42,16 +42,13 @@ export class TransactionManager {
     ethRpc: string;
     erc4337BundlerUrl: string;
     nearAccount: Account;
+    mpcContractId: string;
     safeSaltNonce?: string;
-    mpcContractId?: string;
   }): Promise<TransactionManager> {
     const provider = new ethers.JsonRpcProvider(config.ethRpc);
     const [nearAdapter, safePack] = await Promise.all([
       NearEthAdapter.fromConfig({
-        mpcContract: new MultichainContract(
-          config.nearAccount,
-          config.mpcContractId
-        ),
+        mpcContract: new MpcContract(config.nearAccount, config.mpcContractId),
       }),
       ContractSuite.init(provider),
     ]);
