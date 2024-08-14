@@ -23,7 +23,7 @@ export async function loadArgs(): Promise<UserOptions> {
     .option("mpcContractId", {
       type: "string",
       description: "Address of the mpc (signing) contract",
-      default: "v2.multichain-mpc.testnet",
+      default: "v1.signer-prod.testnet",
     })
     .help()
     .alias("help", "h").argv;
