@@ -2,6 +2,18 @@
   "name": "near-safe",
   "version": "0.0.0",
   "license": "MIT",
+  "description": "An SDK for controlling Ethereum Smart Accounts via ERC4337 from a Near Account.",
+  "author": "bh2smith",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/mintbase/near-safe.git"
+  },
+  "bugs": {
+    "url": "https://github.com/mintbase/near-safe/issues"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  },
   "keywords": [
     "near",
     "ethereum",
@@ -11,7 +23,7 @@
     "chain-signatures"
   ],
   "main": "dist/cjs/index.js",
-  "module": "dist/cjs/index.js",
+  "module": "dist/esm/index.js",
   "types": "dist/esm/index.d.ts",
   "files": [
     "dist/**/*"
