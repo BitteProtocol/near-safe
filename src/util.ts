@@ -1,5 +1,5 @@
 import { ethers } from "ethers";
-import { PaymasterData } from "./types.js";
+import { PaymasterData } from "./types";
 import { MetaTransaction } from "ethers-multisend";
 
 export const PLACEHOLDER_SIG = ethers.solidityPacked(

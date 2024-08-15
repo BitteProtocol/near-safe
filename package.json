@@ -1,15 +1,17 @@
 {
   "name": "near-safe",
   "version": "0.0.0",
-  "module": "index.ts",
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
+  "license": "MIT",
+  "main": "dist/cjs/index.js",
+  "module": "dist/cjs/index.js",
+  "types": "dist/esm/index.d.ts",
   "files": [
     "dist/**/*"
   ],
-  "private": true,
   "scripts": {
-    "build": "rm -rf ./dist && tsc",
+    "build": "rm -fr dist/* && yarn build:esm && yarn build:cjs",
+    "build:esm": "tsc -p tsconfig.esm.json",
+    "build:cjs": "tsc -p tsconfig.cjs.json",
     "start": "yarn example",
     "example": "tsx examples/send-tx.ts",
     "lint": "eslint . --ignore-pattern dist/",
