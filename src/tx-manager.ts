@@ -1,11 +1,11 @@
 import { ethers } from "ethers";
 import { NearEthAdapter, MpcContract } from "near-ca";
-import { Erc4337Bundler } from "./lib/bundler.js";
-import { packSignature } from "./util.js";
-import { getNearSignature } from "./lib/near.js";
-import { UserOperation, UserOperationReceipt, UserOptions } from "./types.js";
+import { Erc4337Bundler } from "./lib/bundler";
+import { packSignature } from "./util";
+import { getNearSignature } from "./lib/near";
+import { UserOperation, UserOperationReceipt, UserOptions } from "./types";
 import { MetaTransaction, encodeMulti } from "ethers-multisend";
-import { ContractSuite } from "./lib/safe.js";
+import { ContractSuite } from "./lib/safe";
 import { Account } from "near-api-js";
 
 export class TransactionManager {
@@ -98,8 +98,11 @@ export class TransactionManager {
     const gasFees = (await this.bundler.getGasPrice()).fast;
     // const gasFees = await this.provider.getFeeData();
     // Build Singular MetaTransaction for Multisend from transaction list.
+    if (transactions.length === 0) {
+      throw new Error("Empty transaction set!");
+    }
     const tx =
-      transactions.length > 1 ? encodeMulti(transactions) : transactions[0];
+      transactions.length > 1 ? encodeMulti(transactions) : transactions[0]!;
     const rawUserOp = await this.safePack.buildUserOp(
       tx,
       this.safeAddress,
