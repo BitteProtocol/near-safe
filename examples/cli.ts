@@ -20,6 +20,11 @@ export async function loadArgs(): Promise<UserOptions> {
       description: "Salt nonce used for the Safe deployment",
       default: "0",
     })
+    .option("mpcContractId", {
+      type: "string",
+      description: "Address of the mpc (signing) contract",
+      default: "v1.signer-dev.testnet",
+    })
     .help()
     .alias("help", "h").argv;
 }
