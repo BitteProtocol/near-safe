@@ -43,8 +43,8 @@
     "@safe-global/safe-modules-deployments": "^2.2.0",
     "ethers": "^6.13.1",
     "ethers-multisend": "^3.1.0",
-    "near-api-js": "^4.0.3",
-    "near-ca": "^0.4.1"
+    "near-api-js": "^5.0.0",
+    "near-ca": "^0.5.2"
   },
   "devDependencies": {
     "@types/node": "^22.3.0",
