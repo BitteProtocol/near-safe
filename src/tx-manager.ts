@@ -1,9 +1,9 @@
 import { ethers } from "ethers";
-import { NearEthAdapter, MpcContract } from "near-ca";
+import { NearEthAdapter, MpcContract, NearEthTxData } from "near-ca";
 import { Erc4337Bundler } from "./lib/bundler";
 import { packSignature } from "./util";
 import { getNearSignature } from "./lib/near";
-import { UserOperation, UserOperationReceipt, UserOptions } from "./types";
+import { UserOperation, UserOperationReceipt } from "./types";
 import { MetaTransaction, encodeMulti } from "ethers-multisend";
 import { ContractSuite } from "./lib/safe";
 import { Account } from "near-api-js";
@@ -92,9 +92,9 @@ export class TransactionManager {
 
   async buildTransaction(args: {
     transactions: MetaTransaction[];
-    options: UserOptions;
-  }): Promise<{ safeOpHash: string; unsignedUserOp: UserOperation }> {
-    const { transactions, options } = args;
+    usePaymaster: boolean;
+  }): Promise<UserOperation> {
+    const { transactions, usePaymaster } = args;
     const gasFees = (await this.bundler.getGasPrice()).fast;
     // const gasFees = await this.provider.getFeeData();
     // Build Singular MetaTransaction for Multisend from transaction list.
@@ -114,25 +114,37 @@ export class TransactionManager {
 
     const paymasterData = await this.bundler.getPaymasterData(
       rawUserOp,
-      options.usePaymaster,
+      usePaymaster,
       this.safeNotDeployed
     );
 
     const unsignedUserOp = { ...rawUserOp, ...paymasterData };
-    const safeOpHash = await this.safePack.getOpHash(
-      unsignedUserOp,
-      paymasterData
-    );
 
-    return {
-      safeOpHash,
-      unsignedUserOp,
-    };
+    return unsignedUserOp;
   }
 
   async signTransaction(safeOpHash: string): Promise<string> {
     const signature = await getNearSignature(this.nearAdapter, safeOpHash);
     return packSignature(signature);
+  }
+
+  async opHash(userOp: UserOperation): Promise<string> {
+    return this.safePack.getOpHash(userOp);
+  }
+  async encodeSignatureRequest(
+    unsignedUserOp: UserOperation
+  ): Promise<NearEthTxData> {
+    const safeOpHash = (await this.opHash(unsignedUserOp)) as `0x${string}`;
+    const txData = this.nearAdapter.encodeSignRequest({
+      method: "hash",
+      chainId: 0,
+      params: safeOpHash as `0x${string}`,
+    });
+
+    return {
+      ...txData,
+      evmMessage: unsignedUserOp,
+    };
   }
 
   async executeTransaction(

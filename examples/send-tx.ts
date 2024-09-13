@@ -4,6 +4,7 @@ import { loadArgs } from "./cli";
 import { TransactionManager } from "../src";
 import { nearAccountFromKeyPair } from "near-ca";
 import { KeyPair } from "near-api-js";
+import { KeyPairString } from "near-api-js/lib/utils";
 
 dotenv.config();
 
@@ -11,7 +12,9 @@ async function main(): Promise<void> {
   const options = await loadArgs();
   const nearAccount = await nearAccountFromKeyPair({
     accountId: process.env.NEAR_ACCOUNT_ID!,
-    keyPair: KeyPair.fromString(process.env.NEAR_ACCOUNT_PRIVATE_KEY!),
+    keyPair: KeyPair.fromString(
+      process.env.NEAR_ACCOUNT_PRIVATE_KEY! as KeyPairString
+    ),
     network: {
       networkId: "testnet",
       nodeUrl: "https://rpc.testnet.near.org",
@@ -40,11 +43,12 @@ async function main(): Promise<void> {
     transactions.push(recoveryTx);
   }
 
-  const { unsignedUserOp, safeOpHash } = await txManager.buildTransaction({
+  const unsignedUserOp = await txManager.buildTransaction({
     transactions,
-    options,
+    usePaymaster: options.usePaymaster,
   });
   console.log("Unsigned UserOp", unsignedUserOp);
+  const safeOpHash = await txManager.opHash(unsignedUserOp);
   console.log("Safe Op Hash", safeOpHash);
 
   // TODO: Evaluate gas cost (in ETH)

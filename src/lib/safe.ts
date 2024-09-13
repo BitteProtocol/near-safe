@@ -8,12 +8,7 @@ import {
   getSafeModuleSetupDeployment,
 } from "@safe-global/safe-modules-deployments";
 import { PLACEHOLDER_SIG, packGas, packPaymasterData } from "../util";
-import {
-  GasPrice,
-  PaymasterData,
-  UnsignedUserOperation,
-  UserOperation,
-} from "../types";
+import { GasPrice, UnsignedUserOperation, UserOperation } from "../types";
 import { MetaTransaction } from "ethers-multisend";
 
 /**
@@ -121,8 +116,8 @@ export class ContractSuite {
   }
 
   async getOpHash(
-    unsignedUserOp: UserOperation,
-    paymasterData: PaymasterData
+    unsignedUserOp: UserOperation
+    // paymasterData: PaymasterData
   ): Promise<string> {
     return this.m4337.getOperationHash({
       ...unsignedUserOp,
@@ -140,7 +135,7 @@ export class ContractSuite {
         unsignedUserOp.maxPriorityFeePerGas,
         unsignedUserOp.maxFeePerGas
       ),
-      paymasterAndData: packPaymasterData(paymasterData),
+      paymasterAndData: packPaymasterData(unsignedUserOp),
       signature: PLACEHOLDER_SIG,
     });
   }
