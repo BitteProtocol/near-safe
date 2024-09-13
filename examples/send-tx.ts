@@ -2,7 +2,7 @@ import dotenv from "dotenv";
 import { ethers } from "ethers";
 import { loadArgs } from "./cli";
 import { TransactionManager } from "../src";
-import { nearAccountFromKeyPair } from "near-ca";
+import { MpcContract, nearAccountFromKeyPair, NearEthAdapter } from "near-ca";
 import { KeyPair } from "near-api-js";
 import { KeyPairString } from "near-api-js/lib/utils";
 
@@ -20,13 +20,14 @@ async function main(): Promise<void> {
       nodeUrl: "https://rpc.testnet.near.org",
     },
   });
-
+  const nearAdapter = await NearEthAdapter.fromConfig({
+    mpcContract: new MpcContract(nearAccount, options.mpcContractId),
+  });
   const txManager = await TransactionManager.create({
     ethRpc: process.env.ETH_RPC!,
     erc4337BundlerUrl: process.env.ERC4337_BUNDLER_URL!,
-    nearAccount,
+    nearAdapter,
     safeSaltNonce: options.safeSaltNonce,
-    mpcContractId: options.mpcContractId,
   });
   const transactions = [
     // TODO: Replace dummy transaction with real user transaction.
