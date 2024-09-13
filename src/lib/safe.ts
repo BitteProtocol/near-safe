@@ -121,8 +121,8 @@ export class ContractSuite {
   }
 
   async getOpHash(
-    unsignedUserOp: UserOperation,
-    paymasterData: PaymasterData
+    unsignedUserOp: UserOperation
+    // paymasterData: PaymasterData
   ): Promise<string> {
     return this.m4337.getOperationHash({
       ...unsignedUserOp,
@@ -140,7 +140,7 @@ export class ContractSuite {
         unsignedUserOp.maxPriorityFeePerGas,
         unsignedUserOp.maxFeePerGas
       ),
-      paymasterAndData: packPaymasterData(paymasterData),
+      paymasterAndData: packPaymasterData(unsignedUserOp),
       signature: PLACEHOLDER_SIG,
     });
   }

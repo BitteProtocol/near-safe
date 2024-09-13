@@ -2289,14 +2289,14 @@ near-api-js@^5.0.0:
     node-fetch "2.6.7"
 
 near-ca@^0.5.2:
-  version "0.5.2"
-  resolved "https://registry.yarnpkg.com/near-ca/-/near-ca-0.5.2.tgz#02ab0e7f0c86ab3e37b54ef0f72e2d4b5c76ae56"
-  integrity sha512-MbZo5IsG7YY6v3WVtestqjLz/THzc0UdOpx1KLUbmPO9CuNAMvMN5HhMIr2ZlPq+VuUui3tRVlOyilWt/x6vRg==
+  version "0.5.4"
+  resolved "https://registry.yarnpkg.com/near-ca/-/near-ca-0.5.4.tgz#04d0d6f50005e312c3ac0aec3ccf85c93e940bfb"
+  integrity sha512-Q5hY6uY3/2qYOqiXT23an3hyKeqPKG1RJRGIn/v55I+8FdlIvJYLd/gllB4crDn2psYwjUoevwTUbRLMP33bmA==
   dependencies:
     "@walletconnect/web3wallet" "^1.13.0"
     elliptic "^6.5.6"
     near-api-js "^5.0.0"
-    viem "^2.17.5"
+    viem "^2.21.6"
 
 node-addon-api@^5.0.0:
   version "5.1.0"
@@ -2860,7 +2860,7 @@ util-deprecate@^1.0.1:
   resolved "https://registry.yarnpkg.com/util-deprecate/-/util-deprecate-1.0.2.tgz#450d4dc9fa70de732762fbd2d4a28981419a0ccf"
   integrity sha512-EPD5q1uXyFxJpCrLnCc1nHnq3gOa6DZBocAIiI2TaSCA7VCJ1UJDMagCzIkXNsUYfD1daK//LTEQ8xiIbrHtcw==
 
-viem@^2.17.5:
+viem@^2.21.6:
   version "2.21.6"
   resolved "https://registry.yarnpkg.com/viem/-/viem-2.21.6.tgz#741f9e579e069335d1540051dde19aea272ee1d7"
   integrity sha512-YX48IVl6nZ4FRsY4ypv2RrxtQVWysIY146/lBW53tma8u32h8EsiA7vecw9ZbrueNUy/asHR4Egu68Z6FOvDzQ==
