@@ -8,12 +8,7 @@ import {
   getSafeModuleSetupDeployment,
 } from "@safe-global/safe-modules-deployments";
 import { PLACEHOLDER_SIG, packGas, packPaymasterData } from "../util";
-import {
-  GasPrice,
-  PaymasterData,
-  UnsignedUserOperation,
-  UserOperation,
-} from "../types";
+import { GasPrice, UnsignedUserOperation, UserOperation } from "../types";
 import { MetaTransaction } from "ethers-multisend";
 
 /**

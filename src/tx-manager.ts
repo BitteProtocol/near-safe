@@ -1,9 +1,9 @@
 import { ethers } from "ethers";
-import { NearEthAdapter, MpcContract, NearEthTxData, toPayload } from "near-ca";
+import { NearEthAdapter, MpcContract, NearEthTxData } from "near-ca";
 import { Erc4337Bundler } from "./lib/bundler";
 import { packSignature } from "./util";
 import { getNearSignature } from "./lib/near";
-import { Hex, UserOperation, UserOperationReceipt, UserOptions } from "./types";
+import { UserOperation, UserOperationReceipt } from "./types";
 import { MetaTransaction, encodeMulti } from "ethers-multisend";
 import { ContractSuite } from "./lib/safe";
 import { Account } from "near-api-js";
