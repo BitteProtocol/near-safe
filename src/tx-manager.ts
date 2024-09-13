@@ -1,12 +1,11 @@
 import { ethers } from "ethers";
-import { NearEthAdapter, MpcContract, NearEthTxData, BaseTx } from "near-ca";
+import { NearEthAdapter, NearEthTxData, BaseTx } from "near-ca";
 import { Erc4337Bundler } from "./lib/bundler";
 import { packSignature } from "./util";
 import { getNearSignature } from "./lib/near";
 import { UserOperation, UserOperationReceipt } from "./types";
 import { MetaTransaction, encodeMulti } from "ethers-multisend";
 import { ContractSuite } from "./lib/safe";
-import { Account } from "near-api-js";
 
 export class TransactionManager {
   readonly provider: ethers.JsonRpcProvider;
@@ -41,25 +40,20 @@ export class TransactionManager {
   static async create(config: {
     ethRpc: string;
     erc4337BundlerUrl: string;
-    nearAccount: Account;
-    mpcContractId: string;
+    nearAdapter: NearEthAdapter;
     safeSaltNonce?: string;
   }): Promise<TransactionManager> {
+    const adapter = config.nearAdapter;
     const provider = new ethers.JsonRpcProvider(config.ethRpc);
-    const [nearAdapter, safePack] = await Promise.all([
-      NearEthAdapter.fromConfig({
-        mpcContract: new MpcContract(config.nearAccount, config.mpcContractId),
-      }),
-      ContractSuite.init(provider),
-    ]);
+    const safePack = await ContractSuite.init(provider);
     console.log(
-      `Near Adapter: ${nearAdapter.nearAccountId()} <> ${nearAdapter.address}`
+      `Near Adapter: ${adapter.nearAccountId()} <> ${adapter.address}`
     );
     const bundler = new Erc4337Bundler(
       config.erc4337BundlerUrl,
       await safePack.entryPoint.getAddress()
     );
-    const setup = await safePack.getSetup([nearAdapter.address]);
+    const setup = await safePack.getSetup([adapter.address]);
     const safeAddress = await safePack.addressForSetup(
       setup,
       config.safeSaltNonce
@@ -68,7 +62,7 @@ export class TransactionManager {
     console.log(`Safe Address: ${safeAddress} - deployed? ${!safeNotDeployed}`);
     return new TransactionManager(
       provider,
-      nearAdapter,
+      adapter,
       safePack,
       bundler,
       setup,
