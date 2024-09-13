@@ -1,5 +1,5 @@
 import { ethers } from "ethers";
-import { NearEthAdapter, MpcContract, NearEthTxData } from "near-ca";
+import { NearEthAdapter, MpcContract, NearEthTxData, BaseTx } from "near-ca";
 import { Erc4337Bundler } from "./lib/bundler";
 import { packSignature } from "./util";
 import { getNearSignature } from "./lib/near";
@@ -131,19 +131,27 @@ export class TransactionManager {
   async opHash(userOp: UserOperation): Promise<string> {
     return this.safePack.getOpHash(userOp);
   }
-  async encodeSignatureRequest(
-    unsignedUserOp: UserOperation
-  ): Promise<NearEthTxData> {
+  async encodeSignRequest(tx: BaseTx): Promise<NearEthTxData> {
+    // TODO - This is sloppy and ignores ChainId!
+    const unsignedUserOp = await this.buildTransaction({
+      transactions: [
+        {
+          to: tx.to!,
+          value: (tx.value || 0n).toString(),
+          data: tx.data || "0x",
+        },
+      ],
+      usePaymaster: true,
+    });
     const safeOpHash = (await this.opHash(unsignedUserOp)) as `0x${string}`;
-    const txData = this.nearAdapter.encodeSignRequest({
+    const signRequest = await this.nearAdapter.encodeSignRequest({
       method: "hash",
       chainId: 0,
       params: safeOpHash as `0x${string}`,
     });
-
     return {
-      ...txData,
-      evmMessage: unsignedUserOp,
+      ...signRequest,
+      evmMessage: JSON.stringify(unsignedUserOp),
     };
   }
 
