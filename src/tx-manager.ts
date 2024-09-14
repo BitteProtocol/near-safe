@@ -14,6 +14,7 @@ export class TransactionManager {
   private bundler: Erc4337Bundler;
   private setup: string;
   readonly address: string;
+  readonly chainId: number;
   private safeSaltNonce: string;
   private _safeNotDeployed: boolean;
 
@@ -23,6 +24,7 @@ export class TransactionManager {
     safePack: ContractSuite,
     bundler: Erc4337Bundler,
     setup: string,
+    chainId: number,
     safeAddress: string,
     safeSaltNonce: string,
     safeNotDeployed: boolean
@@ -32,6 +34,7 @@ export class TransactionManager {
     this.safePack = safePack;
     this.bundler = bundler;
     this.setup = setup;
+    this.chainId = chainId;
     this.address = safeAddress;
     this.safeSaltNonce = safeSaltNonce;
     this._safeNotDeployed = safeNotDeployed;
@@ -67,6 +70,7 @@ export class TransactionManager {
       safePack,
       bundler,
       setup,
+      parseInt(chainId.toString()),
       safeAddress,
       config.safeSaltNonce || "0",
       safeNotDeployed
@@ -92,11 +96,6 @@ export class TransactionManager {
 
   get mpcAddress(): `0x${string}` {
     return this.nearAdapter.address;
-  }
-
-  async chainId(): Promise<number> {
-    const network = await this.provider.getNetwork();
-    return parseInt(network.chainId.toString());
   }
 
   async getSafeBalance(): Promise<bigint> {
@@ -146,6 +145,11 @@ export class TransactionManager {
   }
   async encodeSignRequest(tx: BaseTx): Promise<NearEthTxData> {
     // TODO - This is sloppy and ignores ChainId!
+    if (tx.chainId !== this.chainId) {
+      throw new Error(
+        `Transaciton request for invalid ChainId ${tx.chainId} != ${this.chainId}`
+      );
+    }
     const unsignedUserOp = await this.buildTransaction({
       transactions: [
         {
