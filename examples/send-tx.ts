@@ -2,33 +2,24 @@ import dotenv from "dotenv";
 import { ethers } from "ethers";
 import { loadArgs } from "./cli";
 import { TransactionManager } from "../src";
-import { MpcContract, nearAccountFromKeyPair, NearEthAdapter } from "near-ca";
-import { KeyPair } from "near-api-js";
-import { KeyPairString } from "near-api-js/lib/utils";
+import { setupAdapter } from "near-ca";
 
 dotenv.config();
 
 async function main(): Promise<void> {
-  const options = await loadArgs();
-  const nearAccount = await nearAccountFromKeyPair({
-    accountId: process.env.NEAR_ACCOUNT_ID!,
-    keyPair: KeyPair.fromString(
-      process.env.NEAR_ACCOUNT_PRIVATE_KEY! as KeyPairString
-    ),
-    network: {
-      networkId: "testnet",
-      nodeUrl: "https://rpc.testnet.near.org",
-    },
-  });
-  const nearAdapter = await NearEthAdapter.fromConfig({
-    mpcContract: new MpcContract(nearAccount, options.mpcContractId),
-  });
-  const txManager = await TransactionManager.create({
-    ethRpc: process.env.ETH_RPC!,
+  const { mpcContractId, recoveryAddress, usePaymaster } = await loadArgs();
+
+  const txManager = await TransactionManager.fromChainId({
+    chainId: 11155111,
+    nearAdapter: await setupAdapter({
+      accountId: process.env.NEAR_ACCOUNT_ID!,
+      // This must be set to transact. Otherwise, instance will be read-only
+      privateKey: process.env.NEAR_ACCOUNT_PRIVATE_KEY,
+      mpcContractId,
+    }),
     pimlicoKey: process.env.PIMLICO_KEY!,
-    nearAdapter,
-    safeSaltNonce: options.safeSaltNonce,
   });
+
   const transactions = [
     // TODO: Replace dummy transaction with real user transaction.
     {
@@ -38,15 +29,15 @@ async function main(): Promise<void> {
     },
   ];
   // Add Recovery if safe not deployed & recoveryAddress was provided.
-  if (txManager.safeNotDeployed && options.recoveryAddress) {
-    const recoveryTx = txManager.addOwnerTx(options.recoveryAddress);
+  if (txManager.safeNotDeployed && recoveryAddress) {
+    const recoveryTx = txManager.addOwnerTx(recoveryAddress);
     // This would happen (sequentially) after the userTx, but all executed in a single
     transactions.push(recoveryTx);
   }
 
   const unsignedUserOp = await txManager.buildTransaction({
     transactions,
-    usePaymaster: options.usePaymaster,
+    usePaymaster,
   });
   console.log("Unsigned UserOp", unsignedUserOp);
   const safeOpHash = await txManager.opHash(unsignedUserOp);
@@ -57,7 +48,7 @@ async function main(): Promise<void> {
   // Whenever not using paymaster, or on value transfer, the Safe must be funded.
   const sufficientFunded = await txManager.safeSufficientlyFunded(
     transactions,
-    options.usePaymaster ? 0n : gasCost
+    usePaymaster ? 0n : gasCost
   );
   if (!sufficientFunded) {
     console.warn(
