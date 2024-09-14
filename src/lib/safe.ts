@@ -41,10 +41,16 @@ export class ContractSuite {
   static async init(provider: ethers.JsonRpcProvider): Promise<ContractSuite> {
     const safeDeployment = (fn: DeploymentFunction): Promise<ethers.Contract> =>
       getDeployment(fn, { provider, version: "1.4.1" });
-    const m4337Deployment = (
+    const m4337Deployment = async (
       fn: DeploymentFunction
-    ): Promise<ethers.Contract> =>
-      getDeployment(fn, { provider, version: "0.3.0" });
+    ): Promise<ethers.Contract> => {
+      try {
+        return await getDeployment(fn, { provider, version: "0.3.0" });
+      } catch (error: unknown) {
+        console.warn((error as Error).message, "using v0.2.0");
+        return getDeployment(fn, { provider, version: "0.2.0" });
+      }
+    };
     // Need this first to get entryPoint address
     const m4337 = await m4337Deployment(getSafe4337ModuleDeployment);
 
@@ -196,7 +202,7 @@ async function getDeployment(
   const deployment = fn({ version });
   if (!deployment || !deployment.networkAddresses[`${chainId}`]) {
     throw new Error(
-      `Deployment not found for version ${version} and chainId ${chainId}`
+      `Deployment not found for ${fn.name} version ${version} on chainId ${chainId}`
     );
   }
   return new ethers.Contract(
