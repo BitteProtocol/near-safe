@@ -66,6 +66,13 @@ export class ContractSuite {
       ["function getNonce(address, uint192 key) view returns (uint256 nonce)"],
       provider
     );
+    console.log("Initialized ERC4337 & Safe Module Contracts:", {
+      singleton: await singleton.getAddress(),
+      proxyFactory: await proxyFactory.getAddress(),
+      m4337: await m4337.getAddress(),
+      moduleSetup: await moduleSetup.getAddress(),
+      entryPoint: await entryPoint.getAddress(),
+    });
     return new ContractSuite(
       provider,
       singleton,

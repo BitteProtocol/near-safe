@@ -7,18 +7,6 @@ import { UserOperation, UserOperationReceipt } from "./types";
 import { MetaTransaction, encodeMulti } from "ethers-multisend";
 import { ContractSuite } from "./lib/safe";
 
-export async function managerForChainId(
-  nearAdapter: NearEthAdapter,
-  chainId: number,
-  pimlicoKey: string
-): Promise<TransactionManager> {
-  return TransactionManager.create({
-    ethRpc: Network.fromChainId(chainId).rpcUrl,
-    pimlicoKey,
-    nearAdapter,
-  });
-}
-
 export class TransactionManager {
   readonly provider: ethers.JsonRpcProvider;
   readonly nearAdapter: NearEthAdapter;
@@ -83,6 +71,19 @@ export class TransactionManager {
       config.safeSaltNonce || "0",
       safeNotDeployed
     );
+  }
+
+  static async fromChainId(args: {
+    chainId: number;
+    nearAdapter: NearEthAdapter;
+    pimlicoKey: string;
+  }): Promise<TransactionManager> {
+    const { pimlicoKey, nearAdapter } = args;
+    return TransactionManager.create({
+      ethRpc: Network.fromChainId(args.chainId).rpcUrl,
+      pimlicoKey,
+      nearAdapter,
+    });
   }
 
   get safeNotDeployed(): boolean {
