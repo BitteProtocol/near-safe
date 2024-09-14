@@ -8,14 +8,9 @@ import {
   getSafeModuleSetupDeployment,
 } from "@safe-global/safe-modules-deployments";
 import { PLACEHOLDER_SIG, packGas, packPaymasterData } from "../util";
-import {
-  GasPrice,
-  PaymasterData,
-  UnsignedUserOperation,
-  UserOperation,
-} from "../types";
+import { GasPrice, UnsignedUserOperation, UserOperation } from "../types";
 import { MetaTransaction } from "ethers-multisend";
-import { Address, Hex } from "viem";
+import { Address, Hash, Hex } from "viem";
 
 /**
  * All contracts used in account creation & execution
@@ -47,10 +42,16 @@ export class ContractSuite {
   static async init(provider: ethers.JsonRpcProvider): Promise<ContractSuite> {
     const safeDeployment = (fn: DeploymentFunction): Promise<ethers.Contract> =>
       getDeployment(fn, { provider, version: "1.4.1" });
-    const m4337Deployment = (
+    const m4337Deployment = async (
       fn: DeploymentFunction
-    ): Promise<ethers.Contract> =>
-      getDeployment(fn, { provider, version: "0.3.0" });
+    ): Promise<ethers.Contract> => {
+      try {
+        return await getDeployment(fn, { provider, version: "0.3.0" });
+      } catch (error: unknown) {
+        console.warn((error as Error).message, "using v0.2.0");
+        return getDeployment(fn, { provider, version: "0.2.0" });
+      }
+    };
     // Need this first to get entryPoint address
     const m4337 = await m4337Deployment(getSafe4337ModuleDeployment);
 
@@ -66,6 +67,13 @@ export class ContractSuite {
       ["function getNonce(address, uint192 key) view returns (uint256 nonce)"],
       provider
     );
+    console.log("Initialized ERC4337 & Safe Module Contracts:", {
+      singleton: await singleton.getAddress(),
+      proxyFactory: await proxyFactory.getAddress(),
+      m4337: await m4337.getAddress(),
+      moduleSetup: await moduleSetup.getAddress(),
+      entryPoint: await entryPoint.getAddress(),
+    });
     return new ContractSuite(
       provider,
       singleton,
@@ -102,10 +110,10 @@ export class ContractSuite {
       await this.proxyFactory.getAddress(),
       salt,
       ethers.keccak256(initCode)
-    ) as `0x${string}`;
+    ) as Address;
   }
 
-  async getSetup(owners: string[]): Promise<string> {
+  async getSetup(owners: string[]): Promise<Hex> {
     const setup = await this.singleton.interface.encodeFunctionData("setup", [
       owners,
       1, // We use sign threshold of 1.
@@ -118,13 +126,10 @@ export class ContractSuite {
       0,
       ethers.ZeroAddress,
     ]);
-    return setup;
+    return setup as Hex;
   }
 
-  async getOpHash(
-    unsignedUserOp: UserOperation,
-    paymasterData: PaymasterData
-  ): Promise<`0x${string}`> {
+  async getOpHash(unsignedUserOp: UserOperation): Promise<Hash> {
     return this.m4337.getOperationHash({
       ...unsignedUserOp,
       initCode: unsignedUserOp.factory
@@ -141,7 +146,7 @@ export class ContractSuite {
         unsignedUserOp.maxPriorityFeePerGas,
         unsignedUserOp.maxFeePerGas
       ),
-      paymasterAndData: packPaymasterData(paymasterData),
+      paymasterAndData: packPaymasterData(unsignedUserOp),
       signature: PLACEHOLDER_SIG,
     });
   }
@@ -202,7 +207,7 @@ async function getDeployment(
   const deployment = fn({ version });
   if (!deployment || !deployment.networkAddresses[`${chainId}`]) {
     throw new Error(
-      `Deployment not found for version ${version} and chainId ${chainId}`
+      `Deployment not found for ${fn.name} version ${version} on chainId ${chainId}`
     );
   }
   return new ethers.Contract(

@@ -2,29 +2,24 @@ import dotenv from "dotenv";
 import { ethers } from "ethers";
 import { loadArgs } from "./cli";
 import { TransactionManager } from "../src";
-import { nearAccountFromKeyPair } from "near-ca";
-import { KeyPair } from "near-api-js";
+import { setupAdapter } from "near-ca";
 
 dotenv.config();
 
 async function main(): Promise<void> {
-  const options = await loadArgs();
-  const nearAccount = await nearAccountFromKeyPair({
-    accountId: process.env.NEAR_ACCOUNT_ID!,
-    keyPair: KeyPair.fromString(process.env.NEAR_ACCOUNT_PRIVATE_KEY!),
-    network: {
-      networkId: "testnet",
-      nodeUrl: "https://rpc.testnet.near.org",
-    },
+  const { mpcContractId, recoveryAddress, usePaymaster } = await loadArgs();
+
+  const txManager = await TransactionManager.fromChainId({
+    chainId: 11155111,
+    nearAdapter: await setupAdapter({
+      accountId: process.env.NEAR_ACCOUNT_ID!,
+      // This must be set to transact. Otherwise, instance will be read-only
+      privateKey: process.env.NEAR_ACCOUNT_PRIVATE_KEY,
+      mpcContractId,
+    }),
+    pimlicoKey: process.env.PIMLICO_KEY!,
   });
 
-  const txManager = await TransactionManager.create({
-    ethRpc: process.env.ETH_RPC!,
-    erc4337BundlerUrl: process.env.ERC4337_BUNDLER_URL!,
-    nearAccount,
-    safeSaltNonce: options.safeSaltNonce,
-    mpcContractId: options.mpcContractId,
-  });
   const transactions = [
     // TODO: Replace dummy transaction with real user transaction.
     {
@@ -34,17 +29,18 @@ async function main(): Promise<void> {
     },
   ];
   // Add Recovery if safe not deployed & recoveryAddress was provided.
-  if (txManager.safeNotDeployed && options.recoveryAddress) {
-    const recoveryTx = txManager.addOwnerTx(options.recoveryAddress);
+  if (txManager.safeNotDeployed && recoveryAddress) {
+    const recoveryTx = txManager.addOwnerTx(recoveryAddress);
     // This would happen (sequentially) after the userTx, but all executed in a single
     transactions.push(recoveryTx);
   }
 
-  const { unsignedUserOp, safeOpHash } = await txManager.buildTransaction({
+  const unsignedUserOp = await txManager.buildTransaction({
     transactions,
-    options,
+    usePaymaster,
   });
   console.log("Unsigned UserOp", unsignedUserOp);
+  const safeOpHash = await txManager.opHash(unsignedUserOp);
   console.log("Safe Op Hash", safeOpHash);
 
   // TODO: Evaluate gas cost (in ETH)
@@ -52,11 +48,11 @@ async function main(): Promise<void> {
   // Whenever not using paymaster, or on value transfer, the Safe must be funded.
   const sufficientFunded = await txManager.safeSufficientlyFunded(
     transactions,
-    options.usePaymaster ? 0n : gasCost
+    usePaymaster ? 0n : gasCost
   );
   if (!sufficientFunded) {
     console.warn(
-      `Safe ${txManager.safeAddress} insufficiently funded to perform this transaction. Exiting...`
+      `Safe ${txManager.address} insufficiently funded to perform this transaction. Exiting...`
     );
     process.exit(0); // soft exit with warning!
   }
