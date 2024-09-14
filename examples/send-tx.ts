@@ -25,7 +25,7 @@ async function main(): Promise<void> {
   });
   const txManager = await TransactionManager.create({
     ethRpc: process.env.ETH_RPC!,
-    erc4337BundlerUrl: process.env.ERC4337_BUNDLER_URL!,
+    pimlicoKey: process.env.PIMLICO_KEY!,
     nearAdapter,
     safeSaltNonce: options.safeSaltNonce,
   });
@@ -61,7 +61,7 @@ async function main(): Promise<void> {
   );
   if (!sufficientFunded) {
     console.warn(
-      `Safe ${txManager.safeAddress} insufficiently funded to perform this transaction. Exiting...`
+      `Safe ${txManager.address} insufficiently funded to perform this transaction. Exiting...`
     );
     process.exit(0); // soft exit with warning!
   }

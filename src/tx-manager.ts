@@ -1,5 +1,5 @@
 import { ethers } from "ethers";
-import { NearEthAdapter, NearEthTxData, BaseTx } from "near-ca";
+import { NearEthAdapter, NearEthTxData, BaseTx, Network } from "near-ca";
 import { Erc4337Bundler } from "./lib/bundler";
 import { packSignature } from "./util";
 import { getNearSignature } from "./lib/near";
@@ -7,13 +7,25 @@ import { UserOperation, UserOperationReceipt } from "./types";
 import { MetaTransaction, encodeMulti } from "ethers-multisend";
 import { ContractSuite } from "./lib/safe";
 
+export async function managerForChainId(
+  nearAdapter: NearEthAdapter,
+  chainId: number,
+  pimlicoKey: string
+): Promise<TransactionManager> {
+  return TransactionManager.create({
+    ethRpc: Network.fromChainId(chainId).rpcUrl,
+    pimlicoKey,
+    nearAdapter,
+  });
+}
+
 export class TransactionManager {
   readonly provider: ethers.JsonRpcProvider;
   readonly nearAdapter: NearEthAdapter;
   private safePack: ContractSuite;
   private bundler: Erc4337Bundler;
   private setup: string;
-  readonly safeAddress: string;
+  readonly address: string;
   private safeSaltNonce: string;
   private _safeNotDeployed: boolean;
 
@@ -32,28 +44,29 @@ export class TransactionManager {
     this.safePack = safePack;
     this.bundler = bundler;
     this.setup = setup;
-    this.safeAddress = safeAddress;
+    this.address = safeAddress;
     this.safeSaltNonce = safeSaltNonce;
     this._safeNotDeployed = safeNotDeployed;
   }
 
   static async create(config: {
     ethRpc: string;
-    erc4337BundlerUrl: string;
+    pimlicoKey: string;
     nearAdapter: NearEthAdapter;
     safeSaltNonce?: string;
   }): Promise<TransactionManager> {
-    const adapter = config.nearAdapter;
+    const { nearAdapter, pimlicoKey } = config;
     const provider = new ethers.JsonRpcProvider(config.ethRpc);
+    const chainId = (await provider.getNetwork()).chainId;
     const safePack = await ContractSuite.init(provider);
     console.log(
-      `Near Adapter: ${adapter.nearAccountId()} <> ${adapter.address}`
+      `Near Adapter: ${nearAdapter.nearAccountId()} <> ${nearAdapter.address}`
     );
     const bundler = new Erc4337Bundler(
-      config.erc4337BundlerUrl,
+      `https://api.pimlico.io/v2/${chainId}/rpc?apikey=${pimlicoKey}`,
       await safePack.entryPoint.getAddress()
     );
-    const setup = await safePack.getSetup([adapter.address]);
+    const setup = await safePack.getSetup([nearAdapter.address]);
     const safeAddress = await safePack.addressForSetup(
       setup,
       config.safeSaltNonce
@@ -62,7 +75,7 @@ export class TransactionManager {
     console.log(`Safe Address: ${safeAddress} - deployed? ${!safeNotDeployed}`);
     return new TransactionManager(
       provider,
-      adapter,
+      nearAdapter,
       safePack,
       bundler,
       setup,
@@ -76,12 +89,17 @@ export class TransactionManager {
     return this._safeNotDeployed;
   }
 
-  get nearEOA(): `0x${string}` {
+  get mpcAddress(): `0x${string}` {
     return this.nearAdapter.address;
   }
 
+  async chainId(): Promise<number> {
+    const network = await this.provider.getNetwork();
+    return parseInt(network.chainId.toString());
+  }
+
   async getSafeBalance(): Promise<bigint> {
-    return await this.provider.getBalance(this.safeAddress);
+    return await this.provider.getBalance(this.address);
   }
 
   async buildTransaction(args: {
@@ -99,7 +117,7 @@ export class TransactionManager {
       transactions.length > 1 ? encodeMulti(transactions) : transactions[0]!;
     const rawUserOp = await this.safePack.buildUserOp(
       tx,
-      this.safeAddress,
+      this.address,
       gasFees,
       this.setup,
       this.safeNotDeployed,
@@ -160,13 +178,13 @@ export class TransactionManager {
 
     // Update safeNotDeployed after the first transaction
     this._safeNotDeployed =
-      (await this.provider.getCode(this.safeAddress)) === "0x";
+      (await this.provider.getCode(this.address)) === "0x";
     return userOpReceipt;
   }
 
   addOwnerTx(address: string): MetaTransaction {
     return {
-      to: this.safeAddress,
+      to: this.address,
       value: "0",
       data: this.safePack.singleton.interface.encodeFunctionData(
         "addOwnerWithThreshold",

@@ -33,7 +33,7 @@ NEAR_ACCOUNT_ID=
 NEAR_ACCOUNT_PRIVATE_KEY=
 
 # Head to https://www.pimlico.io/ for an API key
-ERC4337_BUNDLER_URL=
+PIMLICO_KEY=
 ```
 
 
