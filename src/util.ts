@@ -1,39 +1,36 @@
-import { ethers } from "ethers";
-import { PaymasterData } from "./types";
+import { PaymasterData } from "./types.js";
 import { MetaTransaction } from "ethers-multisend";
+import { Hex, concatHex, encodePacked, toHex } from "viem";
 
-export const PLACEHOLDER_SIG = ethers.solidityPacked(
-  ["uint48", "uint48"],
-  [0, 0]
-);
+export const PLACEHOLDER_SIG = encodePacked(["uint48", "uint48"], [0, 0]);
 
-export const packGas = (
-  hi: ethers.BigNumberish,
-  lo: ethers.BigNumberish
-): string => ethers.solidityPacked(["uint128", "uint128"], [hi, lo]);
+type IntLike = Hex | bigint | string | number;
+
+export const packGas = (hi: IntLike, lo: IntLike): string =>
+  encodePacked(["uint128", "uint128"], [BigInt(hi), BigInt(lo)]);
 
 export function packSignature(
-  signature: string,
+  signature: `0x${string}`,
   validFrom: number = 0,
   validTo: number = 0
-): string {
-  return ethers.solidityPacked(
+): Hex {
+  return encodePacked(
     ["uint48", "uint48", "bytes"],
     [validFrom, validTo, signature]
   );
 }
 
-export function packPaymasterData(data: PaymasterData): string {
-  return data.paymaster
-    ? ethers.hexlify(
-        ethers.concat([
-          data.paymaster,
-          ethers.toBeHex(data.paymasterVerificationGasLimit || "0x", 16),
-          ethers.toBeHex(data.paymasterPostOpGasLimit || "0x", 16),
+export function packPaymasterData(data: PaymasterData): Hex {
+  return (
+    data.paymaster
+      ? concatHex([
+          data.paymaster!,
+          toHex(BigInt(data.paymasterVerificationGasLimit || 0n), { size: 16 }),
+          toHex(BigInt(data.paymasterPostOpGasLimit || 0n), { size: 16 }),
           data.paymasterData || "0x",
         ])
-      )
-    : "0x";
+      : "0x"
+  ) as Hex;
 }
 
 export function containsValue(transactions: MetaTransaction[]): boolean {

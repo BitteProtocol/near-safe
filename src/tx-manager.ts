@@ -2,10 +2,10 @@ import { ethers } from "ethers";
 import { NearEthAdapter, NearEthTxData, BaseTx, Network } from "near-ca";
 import { Erc4337Bundler } from "./lib/bundler";
 import { packSignature } from "./util";
-import { getNearSignature } from "./lib/near";
 import { UserOperation, UserOperationReceipt } from "./types";
 import { MetaTransaction, encodeMulti } from "ethers-multisend";
 import { ContractSuite } from "./lib/safe";
+import { Address, Hash, Hex } from "viem";
 
 export class TransactionManager {
   readonly provider: ethers.JsonRpcProvider;
@@ -13,7 +13,7 @@ export class TransactionManager {
   private safePack: ContractSuite;
   private bundler: Erc4337Bundler;
   private setup: string;
-  readonly address: string;
+  readonly address: Address;
   readonly chainId: number;
   private safeSaltNonce: string;
   private _safeNotDeployed: boolean;
@@ -25,7 +25,7 @@ export class TransactionManager {
     bundler: Erc4337Bundler,
     setup: string,
     chainId: number,
-    safeAddress: string,
+    safeAddress: Address,
     safeSaltNonce: string,
     safeNotDeployed: boolean
   ) {
@@ -94,7 +94,7 @@ export class TransactionManager {
     return this._safeNotDeployed;
   }
 
-  get mpcAddress(): `0x${string}` {
+  get mpcAddress(): Address {
     return this.nearAdapter.address;
   }
 
@@ -135,12 +135,12 @@ export class TransactionManager {
     return unsignedUserOp;
   }
 
-  async signTransaction(safeOpHash: string): Promise<string> {
-    const signature = await getNearSignature(this.nearAdapter, safeOpHash);
+  async signTransaction(safeOpHash: Hex): Promise<Hex> {
+    const signature = await this.nearAdapter.sign(safeOpHash);
     return packSignature(signature);
   }
 
-  async opHash(userOp: UserOperation): Promise<string> {
+  async opHash(userOp: UserOperation): Promise<Hash> {
     return this.safePack.getOpHash(userOp);
   }
   async encodeSignRequest(tx: BaseTx): Promise<NearEthTxData> {

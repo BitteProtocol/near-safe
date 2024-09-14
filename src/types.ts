@@ -1,33 +1,33 @@
-import { ethers } from "ethers";
+import { Address, Hex } from "viem";
 
 export interface UnsignedUserOperation {
-  sender: ethers.AddressLike;
+  sender: Address;
   nonce: string;
-  factory?: ethers.AddressLike;
-  factoryData?: ethers.BytesLike;
-  callData: string;
-  maxPriorityFeePerGas: string;
-  maxFeePerGas: string;
+  factory?: Address;
+  factoryData?: Hex;
+  callData: Hex;
+  maxPriorityFeePerGas: Hex;
+  maxFeePerGas: Hex;
 }
 
 /**
  * Supported Representation of UserOperation for EntryPoint v0.7
  */
 export interface UserOperation extends UnsignedUserOperation {
-  verificationGasLimit: string;
-  callGasLimit: string;
-  preVerificationGas: string;
-  signature?: string;
+  verificationGasLimit: Hex;
+  callGasLimit: Hex;
+  preVerificationGas: Hex;
+  signature?: Hex;
 }
 
 export interface PaymasterData {
-  paymaster?: string;
-  paymasterData?: string;
-  paymasterVerificationGasLimit?: string;
-  paymasterPostOpGasLimit?: string;
-  verificationGasLimit: string;
-  callGasLimit: string;
-  preVerificationGas: string;
+  paymaster?: Address;
+  paymasterData?: Hex;
+  paymasterVerificationGasLimit?: Hex;
+  paymasterPostOpGasLimit?: Hex;
+  verificationGasLimit: Hex;
+  callGasLimit: Hex;
+  preVerificationGas: Hex;
 }
 
 export interface UserOptions {
@@ -37,10 +37,7 @@ export interface UserOptions {
   recoveryAddress?: string;
 }
 
-export type TStatus = "success" | "reverted";
-export type Address = ethers.AddressLike;
-export type Hex = `0x${string}`;
-export type Hash = `0x${string}`;
+export type TxStatus = "success" | "reverted";
 
 interface Log {
   logIndex: string;
@@ -56,20 +53,20 @@ interface Log {
 interface Receipt {
   transactionHash: Hex;
   transactionIndex: bigint;
-  blockHash: Hash;
+  blockHash: Hex;
   blockNumber: bigint;
   from: Address;
-  to: Address | null;
+  to?: Address;
   cumulativeGasUsed: bigint;
-  status: TStatus;
+  status: TxStatus;
   gasUsed: bigint;
-  contractAddress: Address | null;
+  contractAddress?: Address;
   logsBloom: Hex;
   effectiveGasPrice: bigint;
 }
 
 export type UserOperationReceipt = {
-  userOpHash: Hash;
+  userOpHash: Hex;
   entryPoint: Address;
   sender: Address;
   nonce: bigint;

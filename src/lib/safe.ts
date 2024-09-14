@@ -10,6 +10,7 @@ import {
 import { PLACEHOLDER_SIG, packGas, packPaymasterData } from "../util";
 import { GasPrice, UnsignedUserOperation, UserOperation } from "../types";
 import { MetaTransaction } from "ethers-multisend";
+import { Address, Hash, Hex } from "viem";
 
 /**
  * All contracts used in account creation & execution
@@ -86,7 +87,7 @@ export class ContractSuite {
   async addressForSetup(
     setup: ethers.BytesLike,
     saltNonce?: string
-  ): Promise<string> {
+  ): Promise<Address> {
     // bytes32 salt = keccak256(abi.encodePacked(keccak256(initializer), saltNonce));
     // cf: https://github.com/safe-global/safe-smart-account/blob/499b17ad0191b575fcadc5cb5b8e3faeae5391ae/contracts/proxies/SafeProxyFactory.sol#L58
     const salt = ethers.keccak256(
@@ -109,10 +110,10 @@ export class ContractSuite {
       await this.proxyFactory.getAddress(),
       salt,
       ethers.keccak256(initCode)
-    );
+    ) as Address;
   }
 
-  async getSetup(owners: string[]): Promise<string> {
+  async getSetup(owners: string[]): Promise<Hex> {
     const setup = await this.singleton.interface.encodeFunctionData("setup", [
       owners,
       1, // We use sign threshold of 1.
@@ -125,13 +126,10 @@ export class ContractSuite {
       0,
       ethers.ZeroAddress,
     ]);
-    return setup;
+    return setup as Hex;
   }
 
-  async getOpHash(
-    unsignedUserOp: UserOperation
-    // paymasterData: PaymasterData
-  ): Promise<string> {
+  async getOpHash(unsignedUserOp: UserOperation): Promise<Hash> {
     return this.m4337.getOperationHash({
       ...unsignedUserOp,
       initCode: unsignedUserOp.factory
@@ -157,21 +155,21 @@ export class ContractSuite {
     safeNotDeployed: boolean,
     setup: string,
     safeSaltNonce: string
-  ): { factory?: ethers.AddressLike; factoryData?: string } {
+  ): { factory?: Address; factoryData?: Hex } {
     return safeNotDeployed
       ? {
-          factory: this.proxyFactory.target,
+          factory: this.proxyFactory.target as Address,
           factoryData: this.proxyFactory.interface.encodeFunctionData(
             "createProxyWithNonce",
             [this.singleton.target, setup, safeSaltNonce]
-          ),
+          ) as Hex,
         }
       : {};
   }
 
   async buildUserOp(
     txData: MetaTransaction,
-    safeAddress: ethers.AddressLike,
+    safeAddress: Address,
     feeData: GasPrice,
     setup: string,
     safeNotDeployed: boolean,
@@ -187,7 +185,7 @@ export class ContractSuite {
         BigInt(txData.value),
         txData.data,
         txData.operation || 0,
-      ]),
+      ]) as Hex,
       ...feeData,
     };
     return rawUserOp;
