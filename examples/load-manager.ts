@@ -12,7 +12,7 @@ async function main(): Promise<void> {
 
   const managers = new Map<number, TransactionManager>();
 
-  for (const chainId of [100, 137, 11155111]) {
+  for (const chainId of [1, 10, 100, 137, 11155111]) {
     managers.set(
       chainId,
       await TransactionManager.fromChainId({
