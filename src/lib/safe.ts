@@ -205,13 +205,22 @@ async function getDeployment(
 ): Promise<ethers.Contract> {
   const { chainId } = await provider.getNetwork();
   const deployment = fn({ version });
-  if (!deployment || !deployment.networkAddresses[`${chainId}`]) {
+  if (!deployment) {
     throw new Error(
       `Deployment not found for ${fn.name} version ${version} on chainId ${chainId}`
     );
   }
+  let address = deployment.networkAddresses[`${chainId}`];
+  if (!address) {
+    // console.warn(
+    //   `Deployment asset ${fn.name} not listed on chainId ${chainId}, using likely fallback. For more info visit https://github.com/safe-global/safe-modules-deployments`
+    // );
+    // TODO: This is a cheeky hack. Real solution proposed in
+    // https://github.com/Mintbase/near-safe/issues/42
+    address = deployment.networkAddresses["11155111"];
+  }
   return new ethers.Contract(
-    deployment.networkAddresses[`${chainId}`],
+    address,
     deployment.abi as ethers.Fragment[],
     provider
   );
