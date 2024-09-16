@@ -13,7 +13,7 @@ import { Erc4337Bundler } from "./lib/bundler";
 import { encodeMulti } from "./lib/multisend";
 import { ContractSuite } from "./lib/safe";
 import { MetaTransaction, UserOperation, UserOperationReceipt } from "./types";
-import { packSignature } from "./util";
+import { isContract, packSignature } from "./util";
 
 export class TransactionManager {
   readonly nearAdapter: NearEthAdapter;
@@ -177,12 +177,11 @@ export class TransactionManager {
   }
 
   async safeDeployed(chainId: number): Promise<boolean> {
+    // Early exit if already known.
     if (chainId in this.deployedChains) {
       return true;
     }
-    const provider = Network.fromChainId(chainId).client;
-    const deployed =
-      (await provider.getCode({ address: this.address })) !== "0x";
+    const deployed = await isContract(this.address, chainId);
     if (deployed) {
       this.deployedChains.add(chainId);
     }
