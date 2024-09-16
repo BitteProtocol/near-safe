@@ -45,12 +45,7 @@ export class ContractSuite {
     const m4337Deployment = async (
       fn: DeploymentFunction
     ): Promise<ethers.Contract> => {
-      try {
-        return await getDeployment(fn, { provider, version: "0.3.0" });
-      } catch (error: unknown) {
-        console.warn((error as Error).message, "using v0.2.0");
-        return getDeployment(fn, { provider, version: "0.2.0" });
-      }
+      return getDeployment(fn, { provider, version: "0.3.0" });
     };
     // Need this first to get entryPoint address
     const m4337 = await m4337Deployment(getSafe4337ModuleDeployment);
@@ -130,22 +125,21 @@ export class ContractSuite {
   }
 
   async getOpHash(unsignedUserOp: UserOperation): Promise<Hash> {
+    const {
+      factory,
+      factoryData,
+      verificationGasLimit,
+      callGasLimit,
+      maxPriorityFeePerGas,
+      maxFeePerGas,
+    } = unsignedUserOp;
     return this.m4337.getOperationHash({
       ...unsignedUserOp,
-      initCode: unsignedUserOp.factory
-        ? ethers.solidityPacked(
-            ["address", "bytes"],
-            [unsignedUserOp.factory, unsignedUserOp.factoryData]
-          )
+      initCode: factory
+        ? ethers.solidityPacked(["address", "bytes"], [factory, factoryData])
         : "0x",
-      accountGasLimits: packGas(
-        unsignedUserOp.verificationGasLimit,
-        unsignedUserOp.callGasLimit
-      ),
-      gasFees: packGas(
-        unsignedUserOp.maxPriorityFeePerGas,
-        unsignedUserOp.maxFeePerGas
-      ),
+      accountGasLimits: packGas(verificationGasLimit, callGasLimit),
+      gasFees: packGas(maxPriorityFeePerGas, maxFeePerGas),
       paymasterAndData: packPaymasterData(unsignedUserOp),
       signature: PLACEHOLDER_SIG,
     });

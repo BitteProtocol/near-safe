@@ -2,6 +2,29 @@ import yargs from "yargs";
 import { hideBin } from "yargs/helpers";
 import { UserOptions } from "../src";
 
+interface ScriptEnv {
+  nearAccountId: string;
+  nearAccountPrivateKey?: string;
+  pimlicoKey: string;
+}
+
+export async function loadEnv(): Promise<ScriptEnv> {
+  const { NEAR_ACCOUNT_ID, NEAR_ACCOUNT_PRIVATE_KEY, PIMLICO_KEY } =
+    process.env;
+  if (!NEAR_ACCOUNT_ID) {
+    throw new Error("Must provide env var NEAR_ACCOUNT_ID");
+  }
+  if (!PIMLICO_KEY) {
+    throw new Error("Must provide env var PIMLICO_KEY");
+  }
+
+  return {
+    nearAccountId: NEAR_ACCOUNT_ID,
+    nearAccountPrivateKey: NEAR_ACCOUNT_PRIVATE_KEY,
+    pimlicoKey: PIMLICO_KEY,
+  };
+}
+
 export async function loadArgs(): Promise<UserOptions> {
   return yargs(hideBin(process.argv))
     .option("usePaymaster", {

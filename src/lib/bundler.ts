@@ -1,3 +1,4 @@
+// TODO: Ethers dependency is only for Generic HTTP Provider
 import { ethers } from "ethers";
 import {
   GasPrices,
@@ -9,13 +10,25 @@ import {
 import { PLACEHOLDER_SIG } from "../util.js";
 import { toHex } from "viem";
 
+function bundlerUrl(chainId: number, apikey: string): string {
+  return `https://api.pimlico.io/v2/${chainId}/rpc?apikey=${apikey}`;
+}
+
 export class Erc4337Bundler {
   provider: ethers.JsonRpcProvider;
   entryPointAddress: string;
+  apiKey: string;
+  chainId: number;
 
-  constructor(bundlerUrl: string, entryPointAddress: string) {
+  constructor(entryPointAddress: string, apiKey: string, chainId: number) {
     this.entryPointAddress = entryPointAddress;
-    this.provider = new ethers.JsonRpcProvider(bundlerUrl);
+    this.apiKey = apiKey;
+    this.chainId = chainId;
+    this.provider = new ethers.JsonRpcProvider(bundlerUrl(chainId, apiKey));
+  }
+
+  client(chainId: number): ethers.JsonRpcProvider {
+    return new ethers.JsonRpcProvider(bundlerUrl(chainId, this.apiKey));
   }
 
   async getPaymasterData(
