@@ -1,8 +1,9 @@
 import dotenv from "dotenv";
 import { ethers } from "ethers";
+import { setupAdapter } from "near-ca";
+
 import { loadArgs, loadEnv } from "./cli";
 import { TransactionManager } from "../src";
-import { setupAdapter } from "near-ca";
 
 dotenv.config();
 

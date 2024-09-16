@@ -1,4 +1,3 @@
-import { ethers } from "ethers";
 import {
   getProxyFactoryDeployment,
   getSafeL2SingletonDeployment,
@@ -7,14 +6,16 @@ import {
   getSafe4337ModuleDeployment,
   getSafeModuleSetupDeployment,
 } from "@safe-global/safe-modules-deployments";
-import { PLACEHOLDER_SIG, packGas, packPaymasterData } from "../util";
+import { ethers } from "ethers";
+import { Address, Hash, Hex } from "viem";
+
 import {
   GasPrice,
   MetaTransaction,
   UnsignedUserOperation,
   UserOperation,
 } from "../types";
-import { Address, Hash, Hex } from "viem";
+import { PLACEHOLDER_SIG, packGas, packPaymasterData } from "../util";
 
 /**
  * All contracts used in account creation & execution

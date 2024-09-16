@@ -1,6 +1,8 @@
 const tsPlugin = require("@typescript-eslint/eslint-plugin");
 const tsParser = require("@typescript-eslint/parser");
 const js = require("@eslint/js");
+const importPlugin = require("eslint-plugin-import");
+
 
 module.exports = Object.assign({}, js.configs.recommended, {
   files: ["**/*.ts", "**/*.tsx"],
@@ -15,6 +17,7 @@ module.exports = Object.assign({}, js.configs.recommended, {
   },
   plugins: {
     "@typescript-eslint": tsPlugin,
+    "import": importPlugin, // Add import plugin
   },
   ignores: ["node_modules/*"],
   rules: Object.assign({}, tsPlugin.configs.rules, {
@@ -28,6 +31,17 @@ module.exports = Object.assign({}, js.configs.recommended, {
         allowExpressions: true,
         allowTypedFunctionExpressions: true,
       },
+    ],
+    "import/order": [
+      "error",
+      {
+        "groups": [
+          ["builtin", "external"],
+          ["internal", "parent", "sibling", "index"]
+        ],
+        "newlines-between": "always",
+        "alphabetize": { "order": "asc", "caseInsensitive": true }
+      }
     ],
   }),
 });

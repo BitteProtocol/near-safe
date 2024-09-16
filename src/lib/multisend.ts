@@ -6,6 +6,7 @@ import {
   parseAbi,
   size,
 } from "viem";
+
 import { MetaTransaction, OperationType } from "../types";
 
 export const MULTI_SEND_ABI = ["function multiSend(bytes memory transactions)"];
@@ -31,7 +32,7 @@ const encodeMetaTx = (tx: MetaTransaction): Hex =>
     ]
   );
 
-const remove0x = (hexString: Hex) => hexString.slice(2);
+const remove0x = (hexString: Hex): string => hexString.slice(2);
 
 // Encodes a batch of module transactions into a single multiSend module transaction.
 // A module transaction is an object with fields corresponding to a Gnosis Safe's (i.e., Zodiac IAvatar's) `execTransactionFromModule` method parameters.

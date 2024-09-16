@@ -1,5 +1,7 @@
 // TODO: Ethers dependency is only for Generic HTTP Provider
 import { ethers } from "ethers";
+import { toHex } from "viem";
+
 import {
   GasPrices,
   PaymasterData,
@@ -8,7 +10,6 @@ import {
   UserOperationReceipt,
 } from "../types.js";
 import { PLACEHOLDER_SIG } from "../util.js";
-import { toHex } from "viem";
 
 function bundlerUrl(chainId: number, apikey: string): string {
   return `https://api.pimlico.io/v2/${chainId}/rpc?apikey=${apikey}`;

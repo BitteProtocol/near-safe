@@ -1,4 +1,6 @@
 import { ethers } from "ethers";
+
+import { PaymasterData } from "../src";
 import {
   PLACEHOLDER_SIG,
   containsValue,
@@ -6,7 +8,6 @@ import {
   packPaymasterData,
   packSignature,
 } from "../src/util";
-import { PaymasterData } from "../src";
 
 describe("Utility Functions (mostly byte packing)", () => {
   it("PLACE_HOLDER_SIG", () => {
