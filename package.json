@@ -36,7 +36,7 @@
     "example": "tsx examples/send-tx.ts",
     "lint": "eslint . --ignore-pattern dist/",
     "test": "jest",
-    "fmt": "prettier --write '{src,examples,tests}/**/*.{js,jsx,ts,tsx}'",
+    "fmt": "prettier --write '{src,examples,tests}/**/*.{js,jsx,ts,tsx}' && yarn lint --fix",
     "all": "yarn fmt && yarn lint && yarn build"
   },
   "dependencies": {

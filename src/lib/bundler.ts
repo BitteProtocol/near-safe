@@ -8,8 +8,8 @@ import {
   UnsignedUserOperation,
   UserOperation,
   UserOperationReceipt,
-} from "../types.js";
-import { PLACEHOLDER_SIG } from "../util.js";
+} from "../types";
+import { PLACEHOLDER_SIG } from "../util";
 
 function bundlerUrl(chainId: number, apikey: string): string {
   return `https://api.pimlico.io/v2/${chainId}/rpc?apikey=${apikey}`;
