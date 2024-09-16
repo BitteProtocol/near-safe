@@ -1,4 +1,10 @@
-import { NearEthAdapter, NearEthTxData, BaseTx, Network } from "near-ca";
+import {
+  NearEthAdapter,
+  NearEthTxData,
+  BaseTx,
+  Network,
+  setupAdapter,
+} from "near-ca";
 import { Erc4337Bundler } from "./lib/bundler";
 import { packSignature } from "./util";
 import { UserOperation, UserOperationReceipt } from "./types";
@@ -37,12 +43,17 @@ export class TransactionManager {
   }
 
   static async create(config: {
+    accountId: string;
+    mpcContractId: string;
     pimlicoKey: string;
-    nearAdapter: NearEthAdapter;
+    privateKey?: string;
     safeSaltNonce?: string;
   }): Promise<TransactionManager> {
-    const { nearAdapter, pimlicoKey } = config;
-    const safePack = await ContractSuite.init();
+    const { pimlicoKey } = config;
+    const [nearAdapter, safePack] = await Promise.all([
+      setupAdapter({ ...config }),
+      ContractSuite.init(),
+    ]);
     console.log(
       `Near Adapter: ${nearAdapter.nearAccountId()} <> ${nearAdapter.address}`
     );

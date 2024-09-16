@@ -13,14 +13,10 @@ async function main(): Promise<void> {
   ] = await Promise.all([loadEnv(), loadArgs()]);
   const chainId = 11155111;
   const txManager = await TransactionManager.create({
-    ethRpc: "https://rpc2.sepolia.org",
-    nearAdapter: await setupAdapter({
-      accountId: nearAccountId,
-      // This must be set to transact. Otherwise, instance will be read-only
-      privateKey: nearAccountPrivateKey,
-      mpcContractId,
-    }),
+    accountId: nearAccountId,
+    mpcContractId,
     pimlicoKey,
+    privateKey: nearAccountPrivateKey,
   });
 
   const transactions = [
