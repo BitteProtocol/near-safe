@@ -1,10 +1,18 @@
-import { NearEthAdapter, NearEthTxData, BaseTx, Network } from "near-ca";
+import {
+  NearEthAdapter,
+  NearEthTxData,
+  BaseTx,
+  Network,
+  setupAdapter,
+  signatureFromOutcome,
+} from "near-ca";
 import { Erc4337Bundler } from "./lib/bundler";
 import { packSignature } from "./util";
 import { UserOperation, UserOperationReceipt } from "./types";
 import { MetaTransaction, encodeMulti } from "ethers-multisend";
 import { ContractSuite } from "./lib/safe";
-import { Address, Hash, Hex } from "viem";
+import { Address, Hash, Hex, serializeSignature } from "viem";
+import { FinalExecutionOutcome } from "near-api-js/lib/providers";
 
 export class TransactionManager {
   readonly nearAdapter: NearEthAdapter;
@@ -37,12 +45,17 @@ export class TransactionManager {
   }
 
   static async create(config: {
+    accountId: string;
+    mpcContractId: string;
     pimlicoKey: string;
-    nearAdapter: NearEthAdapter;
+    privateKey?: string;
     safeSaltNonce?: string;
   }): Promise<TransactionManager> {
-    const { nearAdapter, pimlicoKey } = config;
-    const safePack = await ContractSuite.init();
+    const { pimlicoKey } = config;
+    const [nearAdapter, safePack] = await Promise.all([
+      setupAdapter({ ...config }),
+      ContractSuite.init(),
+    ]);
     console.log(
       `Near Adapter: ${nearAdapter.nearAccountId()} <> ${nearAdapter.address}`
     );
@@ -200,5 +213,28 @@ export class TransactionManager {
     }
     const safeBalance = await this.getBalance(chainId);
     return txValue + gasCost < safeBalance;
+  }
+
+  async broadcastEvm(
+    chainId: number,
+    outcome: FinalExecutionOutcome,
+    unsignedUserOp: UserOperation
+  ): Promise<{ signature: Hex; receipt: UserOperationReceipt }> {
+    const signature = packSignature(
+      serializeSignature(signatureFromOutcome(outcome))
+    );
+    try {
+      return {
+        signature,
+        receipt: await this.executeTransaction(chainId, {
+          ...unsignedUserOp,
+          signature,
+        }),
+      };
+    } catch (error: unknown) {
+      throw new Error(
+        `Failed EVM broadcast: ${error instanceof Error ? error.message : String(error)}`
+      );
+    }
   }
 }
