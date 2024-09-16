@@ -39,7 +39,9 @@ export class ContractSuite {
     this.entryPoint = entryPoint;
   }
 
-  static async init(provider: ethers.JsonRpcProvider): Promise<ContractSuite> {
+  static async init(): Promise<ContractSuite> {
+    // TODO - this is a cheeky hack.
+    const provider = new ethers.JsonRpcProvider("https://rpc2.sepolia.org");
     const safeDeployment = (fn: DeploymentFunction): Promise<ethers.Contract> =>
       getDeployment(fn, { provider, version: "1.4.1" });
     const m4337Deployment = async (

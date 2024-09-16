@@ -1,4 +1,3 @@
-import { ethers } from "ethers";
 import { NearEthAdapter, NearEthTxData, BaseTx, Network } from "near-ca";
 import { Erc4337Bundler } from "./lib/bundler";
 import { packSignature } from "./util";
@@ -8,18 +7,17 @@ import { ContractSuite } from "./lib/safe";
 import { Address, Hash, Hex } from "viem";
 
 export class TransactionManager {
-  readonly provider: ethers.JsonRpcProvider;
   readonly nearAdapter: NearEthAdapter;
-  private safePack: ContractSuite;
-  private setup: string;
   readonly address: Address;
   readonly entryPointAddress: Address;
+
+  private safePack: ContractSuite;
+  private setup: string;
   private pimlicoKey: string;
   private safeSaltNonce: string;
   private deployedChains: Set<number>;
 
   constructor(
-    provider: ethers.JsonRpcProvider,
     nearAdapter: NearEthAdapter,
     safePack: ContractSuite,
     pimlicoKey: string,
@@ -28,7 +26,6 @@ export class TransactionManager {
     entryPointAddress: Address,
     safeSaltNonce: string
   ) {
-    this.provider = provider;
     this.nearAdapter = nearAdapter;
     this.safePack = safePack;
     this.pimlicoKey = pimlicoKey;
@@ -40,16 +37,12 @@ export class TransactionManager {
   }
 
   static async create(config: {
-    // TODO - eliminate this requirement.
-    ethRpc: string;
     pimlicoKey: string;
     nearAdapter: NearEthAdapter;
     safeSaltNonce?: string;
   }): Promise<TransactionManager> {
     const { nearAdapter, pimlicoKey } = config;
-    // TODO - eliminate need for Provider & Safe Pack Contract instance.
-    const provider = new ethers.JsonRpcProvider(config.ethRpc);
-    const safePack = await ContractSuite.init(provider);
+    const safePack = await ContractSuite.init();
     console.log(
       `Near Adapter: ${nearAdapter.nearAccountId()} <> ${nearAdapter.address}`
     );
@@ -62,7 +55,6 @@ export class TransactionManager {
       (await safePack.entryPoint.getAddress()) as Address;
     console.log(`Safe Address: ${safeAddress}`);
     return new TransactionManager(
-      provider,
       nearAdapter,
       safePack,
       pimlicoKey,
