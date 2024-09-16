@@ -27,15 +27,16 @@ yarn install
 Create a `.env` (or use our `.env.sample`) file in the root of the project and add the following environment variables:
 
 ```sh
-ETH_RPC=https://rpc2.sepolia.org
-
 NEAR_ACCOUNT_ID=
-NEAR_ACCOUNT_PRIVATE_KEY=
-
 # Head to https://www.pimlico.io/ for an API key
 PIMLICO_KEY=
 ```
 
+To use the CLI tool provided here in `examples/*` you will also need to provide a privateKey for your Near account.
+
+```sh
+NEAR_ACCOUNT_PRIVATE_KEY=
+```
 
 ## Usage
 
