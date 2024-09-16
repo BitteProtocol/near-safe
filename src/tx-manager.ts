@@ -8,11 +8,11 @@ import {
 } from "near-ca";
 import { Erc4337Bundler } from "./lib/bundler";
 import { packSignature } from "./util";
-import { UserOperation, UserOperationReceipt } from "./types";
-import { MetaTransaction, encodeMulti } from "ethers-multisend";
+import { MetaTransaction, UserOperation, UserOperationReceipt } from "./types";
 import { ContractSuite } from "./lib/safe";
 import { Address, Hash, Hex, serializeSignature } from "viem";
 import { FinalExecutionOutcome } from "near-api-js/lib/providers";
+import { encodeMulti } from "./lib/multisend";
 
 export class TransactionManager {
   readonly nearAdapter: NearEthAdapter;
