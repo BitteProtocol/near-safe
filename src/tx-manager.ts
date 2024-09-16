@@ -1,3 +1,4 @@
+import { FinalExecutionOutcome } from "near-api-js/lib/providers";
 import {
   NearEthAdapter,
   NearEthTxData,
@@ -6,13 +7,13 @@ import {
   setupAdapter,
   signatureFromOutcome,
 } from "near-ca";
-import { Erc4337Bundler } from "./lib/bundler";
-import { packSignature } from "./util";
-import { MetaTransaction, UserOperation, UserOperationReceipt } from "./types";
-import { ContractSuite } from "./lib/safe";
 import { Address, Hash, Hex, serializeSignature } from "viem";
-import { FinalExecutionOutcome } from "near-api-js/lib/providers";
+
+import { Erc4337Bundler } from "./lib/bundler";
 import { encodeMulti } from "./lib/multisend";
+import { ContractSuite } from "./lib/safe";
+import { MetaTransaction, UserOperation, UserOperationReceipt } from "./types";
+import { packSignature } from "./util";
 
 export class TransactionManager {
   readonly nearAdapter: NearEthAdapter;

@@ -1,5 +1,6 @@
-import { PaymasterData, MetaTransaction } from "./types.js";
 import { Hex, concatHex, encodePacked, toHex } from "viem";
+
+import { PaymasterData, MetaTransaction } from "./types";
 
 export const PLACEHOLDER_SIG = encodePacked(["uint48", "uint48"], [0, 0]);
 
