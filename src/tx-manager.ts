@@ -74,7 +74,7 @@ export class TransactionManager {
     return await provider.getBalance({ address: this.address });
   }
 
-  bundlerForChainId(chainId: number) {
+  bundlerForChainId(chainId: number): Erc4337Bundler {
     return new Erc4337Bundler(this.entryPointAddress, this.pimlicoKey, chainId);
   }
 
