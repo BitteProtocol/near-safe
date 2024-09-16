@@ -63,5 +63,9 @@
     "tsx": "^4.16.0",
     "typescript": "^5.5.2",
     "yargs": "^17.7.2"
+  },
+  "resolutions": {
+    "glob": "^9.0.0",
+    "base-x": "^3.0.0"
   }
 }
