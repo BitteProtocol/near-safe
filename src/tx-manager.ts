@@ -76,6 +76,10 @@ export class TransactionManager {
     return this.nearAdapter.address;
   }
 
+  get mpcContractId(): string {
+    return this.nearAdapter.mpcContract.contract.contractId;
+  }
+
   async getBalance(chainId: number): Promise<bigint> {
     return await getClient(chainId).getBalance({ address: this.address });
   }

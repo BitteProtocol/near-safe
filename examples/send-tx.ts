@@ -64,7 +64,7 @@ async function main(): Promise<void> {
     process.exit(0); // soft exit with warning!
   }
 
-  console.log("Signing with Near...");
+  console.log("Signing with Near at", txManager.mpcContractId);
   const signature = await txManager.signTransaction(safeOpHash);
 
   console.log("Executing UserOp...");
