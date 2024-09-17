@@ -25,7 +25,9 @@ export class Erc4337Bundler {
     this.entryPointAddress = entryPointAddress;
     this.apiKey = apiKey;
     this.chainId = chainId;
-    this.provider = new ethers.JsonRpcProvider(bundlerUrl(chainId, this.apiKey));
+    this.provider = new ethers.JsonRpcProvider(
+      bundlerUrl(chainId, this.apiKey)
+    );
   }
 
   async getPaymasterData(

@@ -1,5 +1,12 @@
 import { Network } from "near-ca";
-import { Address, Hex, concatHex, encodePacked, toHex } from "viem";
+import {
+  Address,
+  Hex,
+  concatHex,
+  encodePacked,
+  toHex,
+  PublicClient,
+} from "viem";
 
 import { PaymasterData, MetaTransaction } from "./types";
 
@@ -42,6 +49,9 @@ export async function isContract(
   address: Address,
   chainId: number
 ): Promise<boolean> {
-  const client = Network.fromChainId(chainId).client;
-  return !!(await client.getCode({ address }));
+  return (await getClient(chainId).getCode({ address })) !== undefined;
+}
+
+export function getClient(chainId: number): PublicClient {
+  return Network.fromChainId(chainId).client;
 }

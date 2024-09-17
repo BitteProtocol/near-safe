@@ -68,11 +68,11 @@ describe("Utility Functions (mostly byte packing)", () => {
     expect(containsValue([VALUE_TX, NO_VALUE_TX])).toBe(true);
   });
 
-  it("isContract", () => {
+  it("isContract", async () => {
     const chainId = 11155111;
-    expect(isContract(zeroAddress, chainId)).toBe(false);
+    expect(await isContract(zeroAddress, chainId)).toBe(false);
     expect(
-      isContract("0x9008D19f58AAbD9eD0D60971565AA8510560ab41", chainId)
+      await isContract("0x9008D19f58AAbD9eD0D60971565AA8510560ab41", chainId)
     ).toBe(true);
   });
 });

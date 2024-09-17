@@ -3,7 +3,6 @@ import {
   NearEthAdapter,
   NearEthTxData,
   BaseTx,
-  Network,
   setupAdapter,
   signatureFromOutcome,
 } from "near-ca";
@@ -13,12 +12,11 @@ import { Erc4337Bundler } from "./lib/bundler";
 import { encodeMulti } from "./lib/multisend";
 import { ContractSuite } from "./lib/safe";
 import { MetaTransaction, UserOperation, UserOperationReceipt } from "./types";
-import { isContract, packSignature } from "./util";
+import { getClient, isContract, packSignature } from "./util";
 
 export class TransactionManager {
   readonly nearAdapter: NearEthAdapter;
   readonly address: Address;
-  readonly entryPointAddress: Address;
 
   private safePack: ContractSuite;
   private setup: string;
@@ -32,13 +30,11 @@ export class TransactionManager {
     pimlicoKey: string,
     setup: string,
     safeAddress: Address,
-    entryPointAddress: Address,
     safeSaltNonce: string
   ) {
     this.nearAdapter = nearAdapter;
     this.safePack = safePack;
     this.pimlicoKey = pimlicoKey;
-    this.entryPointAddress = entryPointAddress;
     this.setup = setup;
     this.address = safeAddress;
     this.safeSaltNonce = safeSaltNonce;
@@ -60,13 +56,11 @@ export class TransactionManager {
     console.log(
       `Near Adapter: ${nearAdapter.nearAccountId()} <> ${nearAdapter.address}`
     );
-    const setup = await safePack.getSetup([nearAdapter.address]);
+    const setup = safePack.getSetup([nearAdapter.address]);
     const safeAddress = await safePack.addressForSetup(
       setup,
       config.safeSaltNonce
     );
-    const entryPointAddress =
-      (await safePack.entryPoint.getAddress()) as Address;
     console.log(`Safe Address: ${safeAddress}`);
     return new TransactionManager(
       nearAdapter,
@@ -74,7 +68,6 @@ export class TransactionManager {
       pimlicoKey,
       setup,
       safeAddress,
-      entryPointAddress,
       config.safeSaltNonce || "0"
     );
   }
@@ -84,12 +77,15 @@ export class TransactionManager {
   }
 
   async getBalance(chainId: number): Promise<bigint> {
-    const provider = Network.fromChainId(chainId).client;
-    return await provider.getBalance({ address: this.address });
+    return await getClient(chainId).getBalance({ address: this.address });
   }
 
   bundlerForChainId(chainId: number): Erc4337Bundler {
-    return new Erc4337Bundler(this.entryPointAddress, this.pimlicoKey, chainId);
+    return new Erc4337Bundler(
+      this.safePack.entryPoint.address,
+      this.pimlicoKey,
+      chainId
+    );
   }
 
   async buildTransaction(args: {
@@ -98,28 +94,33 @@ export class TransactionManager {
     usePaymaster: boolean;
   }): Promise<UserOperation> {
     const { transactions, usePaymaster, chainId } = args;
-    const bundler = this.bundlerForChainId(chainId);
-    const gasFees = (await bundler.getGasPrice()).fast;
-    // Build Singular MetaTransaction for Multisend from transaction list.
     if (transactions.length === 0) {
       throw new Error("Empty transaction set!");
     }
+    const bundler = this.bundlerForChainId(chainId);
+    const [gasFees, nonce, safeDeployed] = await Promise.all([
+      bundler.getGasPrice(),
+      this.safePack.getNonce(this.address, chainId),
+      this.safeDeployed(chainId),
+    ]);
+    // Build Singular MetaTransaction for Multisend from transaction list.
     const tx =
       transactions.length > 1 ? encodeMulti(transactions) : transactions[0]!;
-    const safeNotDeployed = !(await this.safeDeployed(chainId));
+
     const rawUserOp = await this.safePack.buildUserOp(
+      nonce,
       tx,
       this.address,
-      gasFees,
+      gasFees.fast,
       this.setup,
-      safeNotDeployed,
+      !safeDeployed,
       this.safeSaltNonce
     );
 
     const paymasterData = await bundler.getPaymasterData(
       rawUserOp,
       usePaymaster,
-      safeNotDeployed
+      !safeDeployed
     );
 
     const unsignedUserOp = { ...rawUserOp, ...paymasterData };
@@ -188,14 +189,11 @@ export class TransactionManager {
     return deployed;
   }
 
-  addOwnerTx(address: string): MetaTransaction {
+  addOwnerTx(address: Address): MetaTransaction {
     return {
       to: this.address,
       value: "0",
-      data: this.safePack.singleton.interface.encodeFunctionData(
-        "addOwnerWithThreshold",
-        [address, 1]
-      ),
+      data: this.safePack.addOwnerData(address),
     };
   }
 
