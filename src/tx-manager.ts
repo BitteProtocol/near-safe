@@ -11,14 +11,13 @@ import { Address, Hash, Hex, serializeSignature } from "viem";
 
 import { Erc4337Bundler } from "./lib/bundler";
 import { encodeMulti } from "./lib/multisend";
-import { ContractSuite } from "./lib/safe";
+import { ContractSuite } from "./lib/viem-safe";
 import { MetaTransaction, UserOperation, UserOperationReceipt } from "./types";
 import { isContract, packSignature } from "./util";
 
 export class TransactionManager {
   readonly nearAdapter: NearEthAdapter;
   readonly address: Address;
-  readonly entryPointAddress: Address;
 
   private safePack: ContractSuite;
   private setup: string;
@@ -32,13 +31,11 @@ export class TransactionManager {
     pimlicoKey: string,
     setup: string,
     safeAddress: Address,
-    entryPointAddress: Address,
     safeSaltNonce: string
   ) {
     this.nearAdapter = nearAdapter;
     this.safePack = safePack;
     this.pimlicoKey = pimlicoKey;
-    this.entryPointAddress = entryPointAddress;
     this.setup = setup;
     this.address = safeAddress;
     this.safeSaltNonce = safeSaltNonce;
@@ -60,13 +57,11 @@ export class TransactionManager {
     console.log(
       `Near Adapter: ${nearAdapter.nearAccountId()} <> ${nearAdapter.address}`
     );
-    const setup = await safePack.getSetup([nearAdapter.address]);
+    const setup = safePack.getSetup([nearAdapter.address]);
     const safeAddress = await safePack.addressForSetup(
       setup,
       config.safeSaltNonce
     );
-    const entryPointAddress =
-      (await safePack.entryPoint.getAddress()) as Address;
     console.log(`Safe Address: ${safeAddress}`);
     return new TransactionManager(
       nearAdapter,
@@ -74,7 +69,6 @@ export class TransactionManager {
       pimlicoKey,
       setup,
       safeAddress,
-      entryPointAddress,
       config.safeSaltNonce || "0"
     );
   }
@@ -89,7 +83,11 @@ export class TransactionManager {
   }
 
   bundlerForChainId(chainId: number): Erc4337Bundler {
-    return new Erc4337Bundler(this.entryPointAddress, this.pimlicoKey, chainId);
+    return new Erc4337Bundler(
+      this.safePack.entryPoint.address,
+      this.pimlicoKey,
+      chainId
+    );
   }
 
   async buildTransaction(args: {
@@ -188,14 +186,11 @@ export class TransactionManager {
     return deployed;
   }
 
-  addOwnerTx(address: string): MetaTransaction {
+  addOwnerTx(address: Address): MetaTransaction {
     return {
       to: this.address,
       value: "0",
-      data: this.safePack.singleton.interface.encodeFunctionData(
-        "addOwnerWithThreshold",
-        [address, 1]
-      ),
+      data: this.safePack.addOwnerData(address),
     };
   }
 

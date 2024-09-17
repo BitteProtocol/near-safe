@@ -43,5 +43,5 @@ export async function isContract(
   chainId: number
 ): Promise<boolean> {
   const client = Network.fromChainId(chainId).client;
-  return !!(await client.getCode({ address }));
+  return (await client.getCode({ address })) !== undefined;
 }

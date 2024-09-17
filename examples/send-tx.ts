@@ -1,5 +1,6 @@
 import dotenv from "dotenv";
 import { ethers } from "ethers";
+import { isAddress } from "viem";
 
 import { loadArgs, loadEnv } from "./cli";
 import { TransactionManager } from "../src";
@@ -29,7 +30,11 @@ async function main(): Promise<void> {
     },
   ];
   // Add Recovery if safe not deployed & recoveryAddress was provided.
-  if (!(await txManager.safeDeployed(chainId)) && recoveryAddress) {
+  if (
+    !(await txManager.safeDeployed(chainId)) &&
+    recoveryAddress &&
+    isAddress(recoveryAddress)
+  ) {
     const recoveryTx = txManager.addOwnerTx(recoveryAddress);
     // This would happen (sequentially) after the userTx, but all executed in a single
     transactions.push(recoveryTx);
