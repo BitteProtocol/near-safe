@@ -3,7 +3,6 @@ import {
   NearEthAdapter,
   NearEthTxData,
   BaseTx,
-  Network,
   setupAdapter,
   signatureFromOutcome,
 } from "near-ca";
