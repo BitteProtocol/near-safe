@@ -6,7 +6,6 @@ import {
   getSafe4337ModuleDeployment,
   getSafeModuleSetupDeployment,
 } from "@safe-global/safe-modules-deployments";
-import { Network } from "near-ca";
 import {
   Address,
   encodeFunctionData,
@@ -28,7 +27,12 @@ import {
   UnsignedUserOperation,
   UserOperation,
 } from "../types";
-import { PLACEHOLDER_SIG, packGas, packPaymasterData } from "../util";
+import {
+  PLACEHOLDER_SIG,
+  getClient,
+  packGas,
+  packPaymasterData,
+} from "../util";
 
 interface DeploymentData {
   abi: unknown[] | ParseAbi<readonly string[]>;
@@ -39,7 +43,8 @@ interface DeploymentData {
  * All contracts used in account creation & execution
  */
 export class ContractSuite {
-  client: PublicClient;
+  // Used only for stateless contract reads.
+  dummyClient: PublicClient;
   singleton: DeploymentData;
   proxyFactory: DeploymentData;
   m4337: DeploymentData;
@@ -54,7 +59,7 @@ export class ContractSuite {
     moduleSetup: DeploymentData,
     entryPoint: DeploymentData
   ) {
-    this.client = client;
+    this.dummyClient = client;
     this.singleton = singleton;
     this.proxyFactory = proxyFactory;
     this.m4337 = m4337;
@@ -64,7 +69,7 @@ export class ContractSuite {
 
   static async init(): Promise<ContractSuite> {
     // TODO - this is a cheeky hack.
-    const client = Network.fromChainId(11155111).client;
+    const client = getClient(11155111);
     const safeDeployment = (fn: DeploymentFunction): Promise<DeploymentData> =>
       getDeployment(fn, { version: "1.4.1" });
     const m4337Deployment = async (
@@ -110,7 +115,8 @@ export class ContractSuite {
   async addressForSetup(setup: Hex, saltNonce?: string): Promise<Address> {
     // bytes32 salt = keccak256(abi.encodePacked(keccak256(initializer), saltNonce));
     // cf: https://github.com/safe-global/safe-smart-account/blob/499b17ad0191b575fcadc5cb5b8e3faeae5391ae/contracts/proxies/SafeProxyFactory.sol#L58
-    const salt = keccak256(encodePacked(
+    const salt = keccak256(
+      encodePacked(
         ["bytes32", "uint256"],
         [keccak256(setup), BigInt(saltNonce || "0")]
       )
@@ -121,7 +127,7 @@ export class ContractSuite {
     const initCode = encodePacked(
       ["bytes", "uint256"],
       [
-        (await this.client.readContract({
+        (await this.dummyClient.readContract({
           address: this.proxyFactory.address,
           abi: this.proxyFactory.abi,
           functionName: "proxyCreationCode",
@@ -136,7 +142,6 @@ export class ContractSuite {
     });
   }
 
-  
   getSetup(owners: string[]): Hex {
     return encodeFunctionData({
       abi: this.singleton.abi,
@@ -175,7 +180,7 @@ export class ContractSuite {
       maxPriorityFeePerGas,
       maxFeePerGas,
     } = unsignedUserOp;
-    const opHash = await this.client.readContract({
+    const opHash = await this.dummyClient.readContract({
       address: this.m4337.address,
       abi: this.m4337.abi,
       functionName: "getOperationHash",
@@ -213,6 +218,7 @@ export class ContractSuite {
   }
 
   async buildUserOp(
+    nonce: bigint,
     txData: MetaTransaction,
     safeAddress: Address,
     feeData: GasPrice,
@@ -220,12 +226,6 @@ export class ContractSuite {
     safeNotDeployed: boolean,
     safeSaltNonce: string
   ): Promise<UnsignedUserOperation> {
-    const nonce = (await this.client.readContract({
-      abi: this.entryPoint.abi,
-      address: this.entryPoint.address,
-      functionName: "getNonce",
-      args: [safeAddress, 0],
-    })) as bigint;
     return {
       sender: safeAddress,
       nonce: toHex(nonce),
@@ -243,6 +243,16 @@ export class ContractSuite {
       }),
       ...feeData,
     };
+  }
+
+  async getNonce(address: Address, chainId: number): Promise<bigint> {
+    const nonce = (await getClient(chainId).readContract({
+      abi: this.entryPoint.abi,
+      address: this.entryPoint.address,
+      functionName: "getNonce",
+      args: [address, 0],
+    })) as bigint;
+    return nonce;
   }
 }
 

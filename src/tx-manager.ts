@@ -11,9 +11,9 @@ import { Address, Hash, Hex, serializeSignature } from "viem";
 
 import { Erc4337Bundler } from "./lib/bundler";
 import { encodeMulti } from "./lib/multisend";
-import { ContractSuite } from "./lib/viem-safe";
+import { ContractSuite } from "./lib/safe";
 import { MetaTransaction, UserOperation, UserOperationReceipt } from "./types";
-import { isContract, packSignature } from "./util";
+import { getClient, isContract, packSignature } from "./util";
 
 export class TransactionManager {
   readonly nearAdapter: NearEthAdapter;
@@ -78,8 +78,7 @@ export class TransactionManager {
   }
 
   async getBalance(chainId: number): Promise<bigint> {
-    const provider = Network.fromChainId(chainId).client;
-    return await provider.getBalance({ address: this.address });
+    return await getClient(chainId).getBalance({ address: this.address });
   }
 
   bundlerForChainId(chainId: number): Erc4337Bundler {
@@ -96,28 +95,33 @@ export class TransactionManager {
     usePaymaster: boolean;
   }): Promise<UserOperation> {
     const { transactions, usePaymaster, chainId } = args;
-    const bundler = this.bundlerForChainId(chainId);
-    const gasFees = (await bundler.getGasPrice()).fast;
-    // Build Singular MetaTransaction for Multisend from transaction list.
     if (transactions.length === 0) {
       throw new Error("Empty transaction set!");
     }
+    const bundler = this.bundlerForChainId(chainId);
+    const [gasFees, nonce, safeDeployed] = await Promise.all([
+      bundler.getGasPrice(),
+      this.safePack.getNonce(this.address, chainId),
+      this.safeDeployed(chainId),
+    ]);
+    // Build Singular MetaTransaction for Multisend from transaction list.
     const tx =
       transactions.length > 1 ? encodeMulti(transactions) : transactions[0]!;
-    const safeNotDeployed = !(await this.safeDeployed(chainId));
+
     const rawUserOp = await this.safePack.buildUserOp(
+      nonce,
       tx,
       this.address,
-      gasFees,
+      gasFees.fast,
       this.setup,
-      safeNotDeployed,
+      !safeDeployed,
       this.safeSaltNonce
     );
 
     const paymasterData = await bundler.getPaymasterData(
       rawUserOp,
       usePaymaster,
-      safeNotDeployed
+      !safeDeployed
     );
 
     const unsignedUserOp = { ...rawUserOp, ...paymasterData };
