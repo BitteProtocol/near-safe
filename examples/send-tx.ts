@@ -1,6 +1,5 @@
 import dotenv from "dotenv";
 import { ethers } from "ethers";
-import { setupAdapter } from "near-ca";
 
 import { loadArgs, loadEnv } from "./cli";
 import { TransactionManager } from "../src";
@@ -19,7 +18,8 @@ async function main(): Promise<void> {
     pimlicoKey,
     privateKey: nearAccountPrivateKey,
   });
-
+  const deployed = await txManager.safeDeployed(chainId);
+  console.log("Deployed?", deployed)
   const transactions = [
     // TODO: Replace dummy transaction with real user transaction.
     {
