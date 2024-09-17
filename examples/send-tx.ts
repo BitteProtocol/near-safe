@@ -19,7 +19,7 @@ async function main(): Promise<void> {
     privateKey: nearAccountPrivateKey,
   });
   const deployed = await txManager.safeDeployed(chainId);
-  console.log("Deployed?", deployed)
+  console.log("Safe Deployed:", deployed);
   const transactions = [
     // TODO: Replace dummy transaction with real user transaction.
     {
