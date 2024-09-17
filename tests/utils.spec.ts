@@ -1,9 +1,11 @@
 import { ethers } from "ethers";
+import { zeroAddress } from "viem";
 
 import { PaymasterData } from "../src";
 import {
   PLACEHOLDER_SIG,
   containsValue,
+  isContract,
   packGas,
   packPaymasterData,
   packSignature,
@@ -64,5 +66,13 @@ describe("Utility Functions (mostly byte packing)", () => {
     expect(containsValue([NO_VALUE_TX])).toBe(false);
     expect(containsValue([VALUE_TX])).toBe(true);
     expect(containsValue([VALUE_TX, NO_VALUE_TX])).toBe(true);
+  });
+
+  it("isContract", () => {
+    const chainId = 11155111;
+    expect(isContract(zeroAddress, chainId)).toBe(false);
+    expect(
+      isContract("0x9008D19f58AAbD9eD0D60971565AA8510560ab41", chainId)
+    ).toBe(true);
   });
 });
