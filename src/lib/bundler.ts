@@ -129,7 +129,6 @@ async function handleRequest<T>(clientMethod: () => Promise<T>): Promise<T> {
   try {
     return await clientMethod();
   } catch (error) {
-    console.log(error);
     if (error instanceof HttpRequestError) {
       if (error.status === 401) {
         throw new Error("Unauthorized request. Please check your API key.");
