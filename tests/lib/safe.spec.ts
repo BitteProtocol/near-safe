@@ -1,7 +1,7 @@
 import { zeroAddress } from "viem";
 
-import { ContractSuite as EthPack } from "./ethers-safe";
-import { ContractSuite as ViemPack } from "../src/lib/safe";
+import { ContractSuite as ViemPack } from "../../src/lib/safe";
+import { ContractSuite as EthPack } from "../ethers-safe";
 
 describe("Safe Pack", () => {
   let ethersPack: EthPack;
