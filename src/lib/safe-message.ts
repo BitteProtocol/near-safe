@@ -27,6 +27,8 @@ export type EIP712TypedData = {
   primaryType: string;
 };
 
+export type MinimalSafeInfo = Pick<SafeInfo, "address" | "version" | "chainId">;
+
 /*
  * From v1.3.0, EIP-1271 support was moved to the CompatibilityFallbackHandler.
  * Also 1.3.0 introduces the chainId in the domain part of the SafeMessage
@@ -49,7 +51,7 @@ const generateSafeMessageMessage = (
  * @returns `SafeMessage` types for signing
  */
 const generateSafeMessageTypedData = (
-  { version, chainId, address }: SafeInfo,
+  { version, chainId, address }: MinimalSafeInfo,
   message: string | EIP712TypedData
 ): EIP712TypedData => {
   if (!version) {
@@ -78,7 +80,7 @@ const generateSafeMessageTypedData = (
 };
 
 const generateSafeMessageHash = (
-  safe: SafeInfo,
+  safe: MinimalSafeInfo,
   message: string | EIP712TypedData
 ): Hash => {
   const typedData = generateSafeMessageTypedData(safe, message);
@@ -116,7 +118,7 @@ const getDecodedMessage = (message: string): string => {
  */
 export function decodedSafeMessage(
   message: string | EIP712TypedData,
-  safe: SafeInfo
+  safe: MinimalSafeInfo
 ): {
   decodedMessage: string | EIP712TypedData;
   safeMessageMessage: string;
