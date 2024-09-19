@@ -1,18 +1,28 @@
 import { FinalExecutionOutcome } from "near-api-js/lib/providers";
 import {
   NearEthAdapter,
-  NearEthTxData,
-  BaseTx,
   setupAdapter,
   signatureFromOutcome,
+  SignRequestData,
+  NearEthTxData,
+  EthSignParams,
+  RecoveryData,
+  toPayload,
+  PersonalSignParams,
 } from "near-ca";
 import { Address, Hash, Hex, serializeSignature } from "viem";
 
 import { Erc4337Bundler } from "./lib/bundler";
 import { encodeMulti } from "./lib/multisend";
 import { ContractSuite } from "./lib/safe";
+import { decodeSafeMessage, safeMessageTxData } from "./lib/safe-message";
 import { MetaTransaction, UserOperation, UserOperationReceipt } from "./types";
-import { getClient, isContract, packSignature } from "./util";
+import {
+  getClient,
+  isContract,
+  metaTransactionsFromRequest,
+  packSignature,
+} from "./util";
 
 export class TransactionManager {
   readonly nearAdapter: NearEthAdapter;
@@ -141,27 +151,18 @@ export class TransactionManager {
     return this.safePack.getOpHash(userOp);
   }
 
-  async encodeSignRequest(tx: BaseTx): Promise<NearEthTxData> {
-    const unsignedUserOp = await this.buildTransaction({
-      chainId: tx.chainId,
-      transactions: [
-        {
-          to: tx.to!,
-          value: (tx.value || 0n).toString(),
-          data: tx.data || "0x",
-        },
-      ],
-      usePaymaster: true,
-    });
-    const safeOpHash = (await this.opHash(unsignedUserOp)) as `0x${string}`;
-    const signRequest = await this.nearAdapter.encodeSignRequest({
-      method: "hash",
-      chainId: 0,
-      params: safeOpHash as `0x${string}`,
-    });
+  async encodeSignRequest(
+    signRequest: SignRequestData,
+    usePaymaster: boolean
+  ): Promise<NearEthTxData> {
+    const data = await this.requestRouter(signRequest, usePaymaster);
     return {
-      ...signRequest,
-      evmMessage: JSON.stringify(unsignedUserOp),
+      nearPayload: await this.nearAdapter.mpcContract.encodeSignatureRequestTx({
+        path: this.nearAdapter.derivationPath,
+        payload: data.payload,
+        key_version: 0,
+      }),
+      ...data,
     };
   }
 
@@ -237,6 +238,74 @@ export class TransactionManager {
       throw new Error(
         `Failed EVM broadcast: ${error instanceof Error ? error.message : String(error)}`
       );
+    }
+  }
+
+  /**
+   * Handles routing of signature requests based on the provided method, chain ID, and parameters.
+   *
+   * @async
+   * @function requestRouter
+   * @param {SignRequestData} params - An object containing the method, chain ID, and request parameters.
+   * @returns {Promise<{ evmMessage: string; payload: number[]; recoveryData: RecoveryData }>}
+   * - Returns a promise that resolves to an object containing the Ethereum Virtual Machine (EVM) message,
+   *   the payload (hashed data), and recovery data needed for reconstructing the signature request.
+   */
+  async requestRouter(
+    { method, chainId, params }: SignRequestData,
+    usePaymaster: boolean
+  ): Promise<{
+    evmMessage: string;
+    payload: number[];
+    // We may eventually be able to abolish this.
+    recoveryData: RecoveryData;
+  }> {
+    const safeInfo = {
+      address: { value: this.address },
+      chainId: chainId.toString(),
+      // TODO: Should be able to read this from on chain.
+      version: "1.4.1+L2",
+    };
+    // TODO: We are provided with sender in the input, but also expect safeInfo.
+    // We should either confirm they agree or ignore one of the two.
+    switch (method) {
+      case "eth_signTypedData":
+      case "eth_signTypedData_v4":
+      case "eth_sign": {
+        const [sender, messageOrData] = params as EthSignParams;
+        return safeMessageTxData(
+          method,
+          decodeSafeMessage(messageOrData, safeInfo),
+          sender
+        );
+      }
+      case "personal_sign": {
+        const [messageHash, sender] = params as PersonalSignParams;
+        return safeMessageTxData(
+          method,
+          decodeSafeMessage(messageHash, safeInfo),
+          sender
+        );
+      }
+      case "eth_sendTransaction": {
+        const transactions = metaTransactionsFromRequest(params);
+        const userOp = await this.buildTransaction({
+          chainId,
+          transactions,
+          usePaymaster,
+        });
+        const opHash = await this.opHash(userOp);
+        return {
+          payload: toPayload(opHash),
+          evmMessage: JSON.stringify(userOp),
+          recoveryData: {
+            type: method,
+            // TODO: Double check that this is sufficient for UI.
+            // We may want to adapt and return the `MetaTransactions` instead.
+            data: opHash,
+          },
+        };
+      }
     }
   }
 }
