@@ -1,3 +1,5 @@
+/// This file is a viem implementation of the useDecodedSafeMessage hook from:
+/// https://github.com/safe-global/safe-wallet-web
 import { type SafeInfo } from "@safe-global/safe-gateway-typescript-sdk";
 import { gte } from "semver";
 import {
