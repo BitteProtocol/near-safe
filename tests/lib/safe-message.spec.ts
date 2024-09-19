@@ -47,8 +47,8 @@ Nonce:
       chainId: "1",
       version: null,
     };
-    expect(
-      decodedSafeMessage(plainMessage, versionlessSafeInfo)
-    ).rejects.toThrow("Cannot create SafeMessage without version information");
+    expect(() => decodedSafeMessage(plainMessage, versionlessSafeInfo)).toThrow(
+      "Cannot create SafeMessage without version information"
+    );
   });
 });
