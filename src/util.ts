@@ -1,4 +1,4 @@
-import { Network } from "near-ca";
+import { EthTransactionParams, Network, SessionRequestParams } from "near-ca";
 import {
   Address,
   Hex,
@@ -6,6 +6,9 @@ import {
   encodePacked,
   toHex,
   PublicClient,
+  isHex,
+  parseTransaction,
+  zeroAddress,
 } from "viem";
 
 import { PaymasterData, MetaTransaction } from "./types";
@@ -55,4 +58,29 @@ export async function isContract(
 
 export function getClient(chainId: number): PublicClient {
   return Network.fromChainId(chainId).client;
+}
+
+export function metaTransactionsFromRequest(
+  params: SessionRequestParams
+): MetaTransaction[] {
+  let transactions: EthTransactionParams[];
+  if (isHex(params)) {
+    // If RLP hex is given, decode the transaction and build EthTransactionParams
+    const tx = parseTransaction(params);
+    transactions = [
+      {
+        from: zeroAddress, // TODO: This is a hack - but its unused.
+        to: tx.to!,
+        value: tx.value ? toHex(tx.value) : "0x00",
+        data: tx.data || "0x",
+      },
+    ];
+  } else {
+    transactions = params as EthTransactionParams[];
+  }
+  return transactions.map((tx) => ({
+    to: tx.to,
+    value: tx.value || "0x00",
+    data: tx.data || "0x",
+  }));
 }

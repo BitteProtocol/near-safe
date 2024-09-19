@@ -7,31 +7,22 @@ import {
   NearEthTxData,
   EthSignParams,
   RecoveryData,
-  EthTransactionParams,
   toPayload,
   PersonalSignParams,
 } from "near-ca";
-import {
-  Address,
-  Hash,
-  Hex,
-  isHex,
-  parseTransaction,
-  serializeSignature,
-  toHex,
-  zeroAddress,
-} from "viem";
+import { Address, Hash, Hex, serializeSignature } from "viem";
 
 import { Erc4337Bundler } from "./lib/bundler";
 import { encodeMulti } from "./lib/multisend";
 import { ContractSuite } from "./lib/safe";
-import {
-  decodeSafeMessage,
-  MinimalSafeInfo,
-  safeMessageTxData,
-} from "./lib/safe-message";
+import { decodeSafeMessage, safeMessageTxData } from "./lib/safe-message";
 import { MetaTransaction, UserOperation, UserOperationReceipt } from "./types";
-import { getClient, isContract, packSignature } from "./util";
+import {
+  getClient,
+  isContract,
+  metaTransactionsFromRequest,
+  packSignature,
+} from "./util";
 
 export class TransactionManager {
   readonly nearAdapter: NearEthAdapter;
@@ -161,27 +152,17 @@ export class TransactionManager {
   }
 
   async encodeSignRequest(
-    signRequest: SignRequestData
+    signRequest: SignRequestData,
+    usePaymaster: boolean
   ): Promise<NearEthTxData> {
-    const { evmMessage, payload, recoveryData } = await this.requestRouter(
-      signRequest,
-      {
-        address: { value: this.address },
-        // TODO: We are duplicating chainId
-        chainId: signRequest.chainId.toString(),
-        // TODO: Should be able to read this from on chain.
-        version: "1.4.1+L2",
-      }
-    );
-
+    const data = await this.requestRouter(signRequest, usePaymaster);
     return {
       nearPayload: await this.nearAdapter.mpcContract.encodeSignatureRequestTx({
         path: this.nearAdapter.derivationPath,
-        payload,
+        payload: data.payload,
         key_version: 0,
       }),
-      evmMessage,
-      recoveryData,
+      ...data,
     };
   }
 
@@ -272,13 +253,19 @@ export class TransactionManager {
    */
   async requestRouter(
     { method, chainId, params }: SignRequestData,
-    safeInfo: MinimalSafeInfo
+    usePaymaster: boolean
   ): Promise<{
     evmMessage: string;
     payload: number[];
     // We may eventually be able to abolish this.
     recoveryData: RecoveryData;
   }> {
+    const safeInfo = {
+      address: { value: this.address },
+      chainId: chainId.toString(),
+      // TODO: Should be able to read this from on chain.
+      version: "1.4.1+L2",
+    };
     // TODO: We are provided with sender in the input, but also expect safeInfo.
     // We should either confirm they agree or ignore one of the two.
     switch (method) {
@@ -301,32 +288,11 @@ export class TransactionManager {
         );
       }
       case "eth_sendTransaction": {
-        let transactions: EthTransactionParams[];
-        if (isHex(params)) {
-          // If RLP hex is given, decode the transaction and build EthTransactionParams
-          const tx = parseTransaction(params);
-          transactions = [
-            {
-              from: zeroAddress, // TODO: This is a hack - but its unused.
-              to: tx.to!,
-              value: tx.value ? toHex(tx.value) : "0x",
-              data: tx.data || "0x",
-            },
-          ];
-        } else {
-          transactions = params as EthTransactionParams[];
-        }
+        const transactions = metaTransactionsFromRequest(params);
         const userOp = await this.buildTransaction({
           chainId,
-          transactions: transactions.map((tx) => {
-            return {
-              to: tx.to,
-              // chainId,
-              value: tx.value || "0x0",
-              data: tx.data || "0x",
-            } as MetaTransaction;
-          }),
-          usePaymaster: true,
+          transactions,
+          usePaymaster,
         });
         const opHash = await this.opHash(userOp);
         return {
@@ -335,6 +301,7 @@ export class TransactionManager {
           recoveryData: {
             type: method,
             // TODO: Double check that this is sufficient for UI.
+            // We may want to adapt and return the `MetaTransactions` instead.
             data: opHash,
           },
         };
