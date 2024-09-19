@@ -1,6 +1,7 @@
 /// This file is a viem implementation of the useDecodedSafeMessage hook from:
 /// https://github.com/safe-global/safe-wallet-web
 import { type SafeInfo } from "@safe-global/safe-gateway-typescript-sdk";
+import { EIP712TypedData, RecoveryData, toPayload } from "near-ca";
 import { gte } from "semver";
 import {
   Address,
@@ -9,22 +10,12 @@ import {
   hashMessage,
   hashTypedData,
   isHex,
-  TypedDataDomain,
 } from "viem";
 
-interface TypedDataTypes {
-  name: string;
-  type: string;
-}
-type TypedMessageTypes = {
-  [key: string]: TypedDataTypes[];
-};
-
-export type EIP712TypedData = {
-  domain: TypedDataDomain;
-  types: TypedMessageTypes;
-  message: Record<string, unknown>;
-  primaryType: string;
+export type DecodedSafeMessage = {
+  decodedMessage: string | EIP712TypedData;
+  safeMessageMessage: string;
+  safeMessageHash: Hash;
 };
 
 export type MinimalSafeInfo = Pick<SafeInfo, "address" | "version" | "chainId">;
@@ -116,14 +107,10 @@ const getDecodedMessage = (message: string): string => {
  *   safeMessageHash
  * }`
  */
-export function decodedSafeMessage(
+export function decodeSafeMessage(
   message: string | EIP712TypedData,
   safe: MinimalSafeInfo
-): {
-  decodedMessage: string | EIP712TypedData;
-  safeMessageMessage: string;
-  safeMessageHash: Hash;
-} {
+): DecodedSafeMessage {
   const decodedMessage =
     typeof message === "string" ? getDecodedMessage(message) : message;
 
@@ -131,6 +118,31 @@ export function decodedSafeMessage(
     decodedMessage,
     safeMessageMessage: generateSafeMessageMessage(decodedMessage),
     safeMessageHash: generateSafeMessageHash(safe, decodedMessage),
+  };
+}
+
+export function safeMessageTxData(
+  method: string,
+  message: DecodedSafeMessage,
+  sender: Address
+): {
+  evmMessage: string;
+  payload: number[];
+  // We may eventually be able to abolish this.
+  recoveryData: RecoveryData;
+} {
+  return {
+    evmMessage: message.safeMessageMessage,
+    payload: toPayload(message.safeMessageHash),
+    recoveryData: {
+      type: method,
+      data: {
+        address: sender,
+        // TODO - Upgrade Signable Message in near-ca
+        // @ts-expect-error: Type 'string | EIP712TypedData' is not assignable to type 'SignableMessage'.
+        message: decodedMessage,
+      },
+    },
   };
 }
 

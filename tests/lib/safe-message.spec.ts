@@ -1,6 +1,6 @@
 import { zeroAddress } from "viem";
 
-import { decodedSafeMessage } from "../../src/lib/safe-message";
+import { decodeSafeMessage } from "../../src/lib/safe-message";
 
 describe("Multisend", () => {
   const plainMessage = `Welcome to OpenSea!
@@ -22,7 +22,7 @@ Nonce:
     version: "1.4.1+L2",
   };
   it("decodeSafeMessage", () => {
-    expect(decodedSafeMessage(plainMessage, safeInfo)).toStrictEqual({
+    expect(decodeSafeMessage(plainMessage, safeInfo)).toStrictEqual({
       decodedMessage: plainMessage,
       safeMessageMessage:
         "0xc90ef7cffa3b5b1422e6c49ca7a5d7c1e9f514db067ec9bad52db13e83cbbb7c",
@@ -31,7 +31,7 @@ Nonce:
     });
     // Lower Safe Version.
     expect(
-      decodedSafeMessage(plainMessage, { ...safeInfo, version: "1.2.1" })
+      decodeSafeMessage(plainMessage, { ...safeInfo, version: "1.2.1" })
     ).toStrictEqual({
       decodedMessage: plainMessage,
       safeMessageMessage:
@@ -47,7 +47,7 @@ Nonce:
       chainId: "1",
       version: null,
     };
-    expect(() => decodedSafeMessage(plainMessage, versionlessSafeInfo)).toThrow(
+    expect(() => decodeSafeMessage(plainMessage, versionlessSafeInfo)).toThrow(
       "Cannot create SafeMessage without version information"
     );
   });

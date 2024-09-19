@@ -10,6 +10,7 @@ import {
 
 import { PaymasterData, MetaTransaction } from "./types";
 
+//
 export const PLACEHOLDER_SIG = encodePacked(["uint48", "uint48"], [0, 0]);
 
 type IntLike = Hex | bigint | string | number;
