@@ -1,7 +1,7 @@
 /// This file is a viem implementation of the useDecodedSafeMessage hook from:
 /// https://github.com/safe-global/safe-wallet-web
 import { type SafeInfo } from "@safe-global/safe-gateway-typescript-sdk";
-import { EIP712TypedData, RecoveryData, toPayload } from "near-ca";
+import { EIP712TypedData } from "near-ca";
 import { gte } from "semver";
 import {
   Address,
@@ -118,31 +118,6 @@ export function decodeSafeMessage(
     decodedMessage,
     safeMessageMessage: generateSafeMessageMessage(decodedMessage),
     safeMessageHash: generateSafeMessageHash(safe, decodedMessage),
-  };
-}
-
-export function safeMessageTxData(
-  method: string,
-  message: DecodedSafeMessage,
-  sender: Address
-): {
-  evmMessage: string;
-  payload: number[];
-  // We may eventually be able to abolish this.
-  recoveryData: RecoveryData;
-} {
-  return {
-    evmMessage: message.safeMessageMessage,
-    payload: toPayload(message.safeMessageHash),
-    recoveryData: {
-      type: method,
-      data: {
-        address: sender,
-        // TODO - Upgrade Signable Message in near-ca
-        // @ts-expect-error: Type 'string | EIP712TypedData' is not assignable to type 'SignableMessage'.
-        message: decodedMessage,
-      },
-    },
   };
 }
 
