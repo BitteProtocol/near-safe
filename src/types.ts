@@ -1,4 +1,5 @@
-import { Address, Hex } from "viem";
+import { FunctionCallTransaction, SignArgs } from "near-ca";
+import { Address, Hash, Hex, TransactionSerializable } from "viem";
 
 export interface UnsignedUserOperation {
   sender: Address;
@@ -100,4 +101,14 @@ export interface MetaTransaction {
   readonly value: string;
   readonly data: string;
   readonly operation?: OperationType;
+}
+export interface EncodedTxData {
+  evmData: {
+    chainId: number;
+    data: string | TransactionSerializable;
+    hash: Hash;
+  };
+  nearPayload: FunctionCallTransaction<{
+    request: SignArgs;
+  }>;
 }
