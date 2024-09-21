@@ -52,7 +52,7 @@ async function main(): Promise<void> {
   // TODO: Evaluate gas cost (in ETH)
   const gasCost = ethers.parseEther("0.01");
   // Whenever not using paymaster, or on value transfer, the Safe must be funded.
-  const sufficientFunded = await txManager.safeSufficientlyFunded(
+  const sufficientFunded = await txManager.sufficientlyFunded(
     chainId,
     transactions,
     usePaymaster ? 0n : gasCost
