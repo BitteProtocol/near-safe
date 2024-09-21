@@ -13,7 +13,7 @@ import { Address, Hash, Hex, serializeSignature } from "viem";
 
 import { Erc4337Bundler } from "./lib/bundler";
 import { encodeMulti } from "./lib/multisend";
-import { ContractSuite } from "./lib/safe";
+import { SafeContractSuite } from "./lib/safe";
 import { decodeSafeMessage } from "./lib/safe-message";
 import {
   EncodedTxData,
@@ -41,7 +41,7 @@ export class NearSafe {
   readonly nearAdapter: NearEthAdapter;
   readonly address: Address;
 
-  private safePack: ContractSuite;
+  private safePack: SafeContractSuite;
   private setup: string;
   private pimlicoKey: string;
   private safeSaltNonce: string;
@@ -49,7 +49,7 @@ export class NearSafe {
 
   constructor(
     nearAdapter: NearEthAdapter,
-    safePack: ContractSuite,
+    safePack: SafeContractSuite,
     pimlicoKey: string,
     setup: string,
     safeAddress: Address,
@@ -65,17 +65,14 @@ export class NearSafe {
   }
 
   static async create(config: NearSafeConfig): Promise<NearSafe> {
-    const { pimlicoKey } = config;
+    const { pimlicoKey, safeSaltNonce } = config;
     const [nearAdapter, safePack] = await Promise.all([
       setupAdapter({ ...config }),
-      ContractSuite.init(),
+      SafeContractSuite.init(),
     ]);
 
     const setup = safePack.getSetup([nearAdapter.address]);
-    const safeAddress = await safePack.addressForSetup(
-      setup,
-      config.safeSaltNonce
-    );
+    const safeAddress = await safePack.addressForSetup(setup, safeSaltNonce);
     console.log(`
       Near Adapter:
         Near Account ID: ${nearAdapter.nearAccountId()}
@@ -88,7 +85,7 @@ export class NearSafe {
       pimlicoKey,
       setup,
       safeAddress,
-      config.safeSaltNonce || "0"
+      safeSaltNonce || "0"
     );
   }
 
