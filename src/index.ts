@@ -1,4 +1,4 @@
-export * from "./tx-manager";
+export * from "./near-safe";
 export * from "./types";
 export * from "./util";
 

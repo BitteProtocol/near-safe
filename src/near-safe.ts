@@ -1,3 +1,4 @@
+import { NearConfig } from "near-api-js/lib/near";
 import { FinalExecutionOutcome } from "near-api-js/lib/providers";
 import {
   NearEthAdapter,
@@ -27,7 +28,16 @@ import {
   packSignature,
 } from "./util";
 
-export class TransactionManager {
+export interface NearSafeConfig {
+  accountId: string;
+  mpcContractId: string;
+  pimlicoKey: string;
+  nearConfig?: NearConfig;
+  privateKey?: string;
+  safeSaltNonce?: string;
+}
+
+export class NearSafe {
   readonly nearAdapter: NearEthAdapter;
   readonly address: Address;
 
@@ -54,28 +64,25 @@ export class TransactionManager {
     this.deployedChains = new Set();
   }
 
-  static async create(config: {
-    accountId: string;
-    mpcContractId: string;
-    pimlicoKey: string;
-    privateKey?: string;
-    safeSaltNonce?: string;
-  }): Promise<TransactionManager> {
+  static async create(config: NearSafeConfig): Promise<NearSafe> {
     const { pimlicoKey } = config;
     const [nearAdapter, safePack] = await Promise.all([
       setupAdapter({ ...config }),
       ContractSuite.init(),
     ]);
-    console.log(
-      `Near Adapter: ${nearAdapter.nearAccountId()} <> ${nearAdapter.address}`
-    );
+
     const setup = safePack.getSetup([nearAdapter.address]);
     const safeAddress = await safePack.addressForSetup(
       setup,
       config.safeSaltNonce
     );
-    console.log(`Safe Address: ${safeAddress}`);
-    return new TransactionManager(
+    console.log(`
+      Near Adapter:
+        Near Account ID: ${nearAdapter.nearAccountId()}
+        MPC EOA: ${nearAdapter.address}
+        Safe: ${safeAddress}
+    `);
+    return new NearSafe(
       nearAdapter,
       safePack,
       pimlicoKey,
