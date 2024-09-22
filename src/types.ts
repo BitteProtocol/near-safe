@@ -1,5 +1,18 @@
 import { FunctionCallTransaction, SignArgs } from "near-ca";
-import { Address, Hash, Hex, TransactionSerializable } from "viem";
+import { Address, Hash, Hex, ParseAbi, TransactionSerializable } from "viem";
+
+export type SafeDeployments = {
+  singleton: Deployment;
+  proxyFactory: Deployment;
+  moduleSetup: Deployment;
+  m4337: Deployment;
+  entryPoint: Deployment;
+};
+
+export interface Deployment {
+  abi: unknown[] | ParseAbi<readonly string[]>;
+  address: Address;
+}
 
 export interface UnsignedUserOperation {
   sender: Address;

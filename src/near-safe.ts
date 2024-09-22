@@ -48,10 +48,8 @@ export class NearSafe {
 
   static async create(config: NearSafeConfig): Promise<NearSafe> {
     const { pimlicoKey, safeSaltNonce } = config;
-    const [nearAdapter, safePack] = await Promise.all([
-      setupAdapter({ ...config }),
-      SafeContractSuite.init(),
-    ]);
+    const nearAdapter = await setupAdapter({ ...config });
+    const safePack = new SafeContractSuite();
 
     const setup = safePack.getSetup([nearAdapter.address]);
     const safeAddress = await safePack.addressForSetup(setup, safeSaltNonce);

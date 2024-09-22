@@ -1,12 +1,4 @@
 import {
-  getProxyFactoryDeployment,
-  getSafeL2SingletonDeployment,
-} from "@safe-global/safe-deployments";
-import {
-  getSafe4337ModuleDeployment,
-  getSafeModuleSetupDeployment,
-} from "@safe-global/safe-modules-deployments";
-import {
   Address,
   encodeFunctionData,
   encodePacked,
@@ -14,14 +6,14 @@ import {
   Hash,
   Hex,
   keccak256,
-  ParseAbi,
-  parseAbi,
   PublicClient,
   toHex,
   zeroAddress,
 } from "viem";
 
+import { SAFE_DEPLOYMENTS } from "../_gen/deployments";
 import {
+  Deployment,
   GasPrice,
   MetaTransaction,
   UnsignedUserOperation,
@@ -34,82 +26,26 @@ import {
   packPaymasterData,
 } from "../util";
 
-interface DeploymentData {
-  abi: unknown[] | ParseAbi<readonly string[]>;
-  address: `0x${string}`;
-}
-
 /**
  * All contracts used in account creation & execution
  */
 export class SafeContractSuite {
   // Used only for stateless contract reads.
   dummyClient: PublicClient;
-  singleton: DeploymentData;
-  proxyFactory: DeploymentData;
-  m4337: DeploymentData;
-  moduleSetup: DeploymentData;
-  entryPoint: DeploymentData;
+  singleton: Deployment;
+  proxyFactory: Deployment;
+  m4337: Deployment;
+  moduleSetup: Deployment;
+  entryPoint: Deployment;
 
-  constructor(
-    client: PublicClient,
-    singleton: DeploymentData,
-    proxyFactory: DeploymentData,
-    m4337: DeploymentData,
-    moduleSetup: DeploymentData,
-    entryPoint: DeploymentData
-  ) {
-    this.dummyClient = client;
-    this.singleton = singleton;
-    this.proxyFactory = proxyFactory;
-    this.m4337 = m4337;
-    this.moduleSetup = moduleSetup;
-    this.entryPoint = entryPoint;
-  }
-
-  static async init(): Promise<SafeContractSuite> {
-    // TODO - this is a cheeky hack.
-    const client = getClient(11155111);
-    const safeDeployment = (fn: DeploymentFunction): Promise<DeploymentData> =>
-      getDeployment(fn, { version: "1.4.1" });
-    const m4337Deployment = async (
-      fn: DeploymentFunction
-    ): Promise<DeploymentData> => {
-      return getDeployment(fn, { version: "0.3.0" });
-    };
-
-    const [singleton, proxyFactory, moduleSetup, m4337] = await Promise.all([
-      safeDeployment(getSafeL2SingletonDeployment),
-      safeDeployment(getProxyFactoryDeployment),
-      m4337Deployment(getSafeModuleSetupDeployment),
-      m4337Deployment(getSafe4337ModuleDeployment),
-    ]);
-
-    // console.log("Initialized ERC4337 & Safe Module Contracts:", {
-    //   singleton: await singleton.getAddress(),
-    //   proxyFactory: await proxyFactory.getAddress(),
-    //   m4337: await m4337.getAddress(),
-    //   moduleSetup: await moduleSetup.getAddress(),
-    //   entryPoint: await entryPoint.getAddress(),
-    // });
-    return new SafeContractSuite(
-      client,
-      singleton,
-      proxyFactory,
-      m4337,
-      moduleSetup,
-      // EntryPoint:
-      {
-        address: (await client.readContract({
-          address: m4337.address,
-          abi: m4337.abi,
-          functionName: "SUPPORTED_ENTRYPOINT",
-        })) as Address,
-        abi: parseAbi([
-          "function getNonce(address, uint192 key) view returns (uint256 nonce)",
-        ]),
-      }
-    );
+  constructor() {
+    this.dummyClient = getClient(11155111);
+    const deployments = SAFE_DEPLOYMENTS;
+    this.singleton = deployments.singleton;
+    this.proxyFactory = deployments.proxyFactory;
+    this.m4337 = deployments.m4337;
+    this.moduleSetup = deployments.moduleSetup;
+    this.entryPoint = deployments.entryPoint;
   }
 
   async addressForSetup(setup: Hex, saltNonce?: string): Promise<Address> {
@@ -254,26 +190,4 @@ export class SafeContractSuite {
     })) as bigint;
     return nonce;
   }
-}
-
-type DeploymentFunction = (filter?: {
-  version: string;
-}) =>
-  | { networkAddresses: { [chainId: string]: string }; abi: unknown[] }
-  | undefined;
-type DeploymentArgs = { version: string };
-
-async function getDeployment(
-  fn: DeploymentFunction,
-  { version }: DeploymentArgs
-): Promise<DeploymentData> {
-  const deployment = fn({ version });
-  if (!deployment) {
-    throw new Error(`Deployment not found for ${fn.name} version ${version}`);
-  }
-  // TODO: maybe call parseAbi on deployment.abi here.
-  return {
-    address: deployment.networkAddresses["11155111"] as Address,
-    abi: deployment.abi,
-  };
 }
