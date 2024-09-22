@@ -5,7 +5,7 @@ describe("Safe Pack", () => {
   it("Unauthorized Requests Failure", async () => {
     const unauthorizedBundler = new Erc4337Bundler(
       entryPoint,
-      "invalid thirty six character API key",
+      "invalid API key",
       11155111
     );
     await expect(() => unauthorizedBundler.getGasPrice()).rejects.toThrow(
