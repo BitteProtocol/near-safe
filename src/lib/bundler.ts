@@ -129,20 +129,19 @@ async function handleRequest<T>(clientMethod: () => Promise<T>): Promise<T> {
   try {
     return await clientMethod();
   } catch (error) {
+    const message = stripApiKey(error);
     if (error instanceof HttpRequestError) {
       if (error.status === 401) {
-        throw new Error("Unauthorized request. Please check your API key.");
-      } else {
-        console.error(
-          `Request failed with status ${error.status}: ${error.message}`
+        throw new Error(
+          "Unauthorized request. Please check your Pimlico API key."
         );
+      } else {
+        throw new Error(`Pimlico: ${message}`);
       }
     } else if (error instanceof RpcError) {
-      throw new Error(`Failed to send user op with: ${error.message}`);
+      throw new Error(`Failed to send user op with: ${message}`);
     }
-    throw new Error(
-      `Unexpected error ${error instanceof Error ? error.message : String(error)}`
-    );
+    throw new Error(`Bundler Request: ${message}`);
   }
 }
 
@@ -154,3 +153,13 @@ const defaultPaymasterData = (safeNotDeployed: boolean): PaymasterData => {
     preVerificationGas: toHex(100000),
   };
 };
+
+export function stripApiKey(error: unknown): string {
+  const message = error instanceof Error ? error.message : String(error);
+  return message.replace(/(apikey=)[^\s&]+/, "$1***");
+  // Could also do this with slicing.
+  // const keyStart = message.indexOf("apikey=") + 7;
+  // // If no apikey in the message, return it as is.
+  // if (keyStart === -1) return message;
+  // return `${message.slice(0, keyStart)}***${message.slice(keyStart + 36)}`;
+}
