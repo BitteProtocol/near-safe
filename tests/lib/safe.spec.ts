@@ -8,7 +8,7 @@ describe("Safe Pack", () => {
   let viemPack: ViemPack;
   beforeAll(async () => {
     ethersPack = await EthPack.init();
-    viemPack = await ViemPack.init();
+    viemPack = new ViemPack();
   });
 
   it("init", async () => {
