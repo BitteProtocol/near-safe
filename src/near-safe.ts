@@ -1,3 +1,4 @@
+import { NearConfig } from "near-api-js/lib/near";
 import { FinalExecutionOutcome } from "near-api-js/lib/providers";
 import {
   NearEthAdapter,
@@ -12,7 +13,7 @@ import { Address, Hash, Hex, serializeSignature } from "viem";
 
 import { Erc4337Bundler } from "./lib/bundler";
 import { encodeMulti } from "./lib/multisend";
-import { ContractSuite } from "./lib/safe";
+import { SafeContractSuite } from "./lib/safe";
 import { decodeSafeMessage } from "./lib/safe-message";
 import {
   EncodedTxData,
@@ -27,62 +28,64 @@ import {
   packSignature,
 } from "./util";
 
-export class TransactionManager {
+export interface NearSafeConfig {
+  accountId: string;
+  mpcContractId: string;
+  pimlicoKey: string;
+  nearConfig?: NearConfig;
+  privateKey?: string;
+  safeSaltNonce?: string;
+}
+
+export class NearSafe {
   readonly nearAdapter: NearEthAdapter;
   readonly address: Address;
 
-  private safePack: ContractSuite;
+  private safePack: SafeContractSuite;
   private setup: string;
   private pimlicoKey: string;
   private safeSaltNonce: string;
-  private deployedChains: Set<number>;
+
+  static async create(config: NearSafeConfig): Promise<NearSafe> {
+    const { pimlicoKey, safeSaltNonce } = config;
+    const [nearAdapter, safePack] = await Promise.all([
+      setupAdapter({ ...config }),
+      SafeContractSuite.init(),
+    ]);
+
+    const setup = safePack.getSetup([nearAdapter.address]);
+    const safeAddress = await safePack.addressForSetup(setup, safeSaltNonce);
+    console.log(`
+      Near Adapter:
+        Near Account ID: ${nearAdapter.nearAccountId()}
+        MPC EOA: ${nearAdapter.address}
+        Safe: ${safeAddress}
+    `);
+    return new NearSafe(
+      nearAdapter,
+      safePack,
+      pimlicoKey,
+      setup,
+      safeAddress,
+      safeSaltNonce || "0"
+    );
+  }
 
   constructor(
     nearAdapter: NearEthAdapter,
-    safePack: ContractSuite,
+    safePack: SafeContractSuite,
     pimlicoKey: string,
     setup: string,
     safeAddress: Address,
     safeSaltNonce: string
   ) {
     this.nearAdapter = nearAdapter;
+    this.address = safeAddress;
+
+    this.setup = setup;
     this.safePack = safePack;
     this.pimlicoKey = pimlicoKey;
-    this.setup = setup;
-    this.address = safeAddress;
     this.safeSaltNonce = safeSaltNonce;
-    this.deployedChains = new Set();
-  }
-
-  static async create(config: {
-    accountId: string;
-    mpcContractId: string;
-    pimlicoKey: string;
-    privateKey?: string;
-    safeSaltNonce?: string;
-  }): Promise<TransactionManager> {
-    const { pimlicoKey } = config;
-    const [nearAdapter, safePack] = await Promise.all([
-      setupAdapter({ ...config }),
-      ContractSuite.init(),
-    ]);
-    console.log(
-      `Near Adapter: ${nearAdapter.nearAccountId()} <> ${nearAdapter.address}`
-    );
-    const setup = safePack.getSetup([nearAdapter.address]);
-    const safeAddress = await safePack.addressForSetup(
-      setup,
-      config.safeSaltNonce
-    );
-    console.log(`Safe Address: ${safeAddress}`);
-    return new TransactionManager(
-      nearAdapter,
-      safePack,
-      pimlicoKey,
-      setup,
-      safeAddress,
-      config.safeSaltNonce || "0"
-    );
   }
 
   get mpcAddress(): Address {
@@ -95,14 +98,6 @@ export class TransactionManager {
 
   async getBalance(chainId: number): Promise<bigint> {
     return await getClient(chainId).getBalance({ address: this.address });
-  }
-
-  bundlerForChainId(chainId: number): Erc4337Bundler {
-    return new Erc4337Bundler(
-      this.safePack.entryPoint.address,
-      this.pimlicoKey,
-      chainId
-    );
   }
 
   async buildTransaction(args: {
@@ -175,59 +170,6 @@ export class TransactionManager {
       },
     };
   }
-
-  async executeTransaction(
-    chainId: number,
-    userOp: UserOperation
-  ): Promise<UserOperationReceipt> {
-    const bundler = this.bundlerForChainId(chainId);
-    const userOpHash = await bundler.sendUserOperation(userOp);
-    console.log("UserOp Hash", userOpHash);
-
-    const userOpReceipt = await bundler.getUserOpReceipt(userOpHash);
-    console.log("userOp Receipt", userOpReceipt);
-
-    // Update safeNotDeployed after the first transaction
-    this.safeDeployed(chainId);
-    return userOpReceipt;
-  }
-
-  async safeDeployed(chainId: number): Promise<boolean> {
-    // Early exit if already known.
-    if (chainId in this.deployedChains) {
-      return true;
-    }
-    const deployed = await isContract(this.address, chainId);
-    if (deployed) {
-      this.deployedChains.add(chainId);
-    }
-    return deployed;
-  }
-
-  addOwnerTx(address: Address): MetaTransaction {
-    return {
-      to: this.address,
-      value: "0",
-      data: this.safePack.addOwnerData(address),
-    };
-  }
-
-  async safeSufficientlyFunded(
-    chainId: number,
-    transactions: MetaTransaction[],
-    gasCost: bigint
-  ): Promise<boolean> {
-    const txValue = transactions.reduce(
-      (acc, tx) => acc + BigInt(tx.value),
-      0n
-    );
-    if (txValue + gasCost === 0n) {
-      return true;
-    }
-    const safeBalance = await this.getBalance(chainId);
-    return txValue + gasCost < safeBalance;
-  }
-
   async broadcastEvm(
     chainId: number,
     outcome: FinalExecutionOutcome,
@@ -249,6 +191,58 @@ export class TransactionManager {
         `Failed EVM broadcast: ${error instanceof Error ? error.message : String(error)}`
       );
     }
+  }
+
+  async executeTransaction(
+    chainId: number,
+    userOp: UserOperation
+  ): Promise<UserOperationReceipt> {
+    const bundler = this.bundlerForChainId(chainId);
+    const userOpHash = await bundler.sendUserOperation(userOp);
+    console.log("UserOp Hash", userOpHash);
+
+    const userOpReceipt = await bundler.getUserOpReceipt(userOpHash);
+    console.log("userOp Receipt", userOpReceipt);
+
+    // Update safeNotDeployed after the first transaction
+    this.safeDeployed(chainId);
+    return userOpReceipt;
+  }
+
+  async safeDeployed(chainId: number): Promise<boolean> {
+    return isContract(this.address, chainId);
+  }
+
+  async sufficientlyFunded(
+    chainId: number,
+    transactions: MetaTransaction[],
+    gasCost: bigint
+  ): Promise<boolean> {
+    const txValue = transactions.reduce(
+      (acc, tx) => acc + BigInt(tx.value),
+      0n
+    );
+    if (txValue + gasCost === 0n) {
+      return true;
+    }
+    const safeBalance = await this.getBalance(chainId);
+    return txValue + gasCost < safeBalance;
+  }
+
+  addOwnerTx(address: Address): MetaTransaction {
+    return {
+      to: this.address,
+      value: "0",
+      data: this.safePack.addOwnerData(address),
+    };
+  }
+
+  private bundlerForChainId(chainId: number): Erc4337Bundler {
+    return new Erc4337Bundler(
+      this.safePack.entryPoint.address,
+      this.pimlicoKey,
+      chainId
+    );
   }
 
   /**

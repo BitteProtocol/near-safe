@@ -42,7 +42,7 @@ interface DeploymentData {
 /**
  * All contracts used in account creation & execution
  */
-export class ContractSuite {
+export class SafeContractSuite {
   // Used only for stateless contract reads.
   dummyClient: PublicClient;
   singleton: DeploymentData;
@@ -67,7 +67,7 @@ export class ContractSuite {
     this.entryPoint = entryPoint;
   }
 
-  static async init(): Promise<ContractSuite> {
+  static async init(): Promise<SafeContractSuite> {
     // TODO - this is a cheeky hack.
     const client = getClient(11155111);
     const safeDeployment = (fn: DeploymentFunction): Promise<DeploymentData> =>
@@ -92,7 +92,7 @@ export class ContractSuite {
     //   moduleSetup: await moduleSetup.getAddress(),
     //   entryPoint: await entryPoint.getAddress(),
     // });
-    return new ContractSuite(
+    return new SafeContractSuite(
       client,
       singleton,
       proxyFactory,

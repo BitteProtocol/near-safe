@@ -3,7 +3,7 @@ import { ethers } from "ethers";
 import { isAddress } from "viem";
 
 import { loadArgs, loadEnv } from "./cli";
-import { TransactionManager } from "../src";
+import { NearSafe } from "../src";
 
 dotenv.config();
 
@@ -13,7 +13,7 @@ async function main(): Promise<void> {
     { mpcContractId, recoveryAddress, usePaymaster },
   ] = await Promise.all([loadEnv(), loadArgs()]);
   const chainId = 11155111;
-  const txManager = await TransactionManager.create({
+  const txManager = await NearSafe.create({
     accountId: nearAccountId,
     mpcContractId,
     pimlicoKey,
@@ -52,7 +52,7 @@ async function main(): Promise<void> {
   // TODO: Evaluate gas cost (in ETH)
   const gasCost = ethers.parseEther("0.01");
   // Whenever not using paymaster, or on value transfer, the Safe must be funded.
-  const sufficientFunded = await txManager.safeSufficientlyFunded(
+  const sufficientFunded = await txManager.sufficientlyFunded(
     chainId,
     transactions,
     usePaymaster ? 0n : gasCost
