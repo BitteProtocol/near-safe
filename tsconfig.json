@@ -24,9 +24,7 @@
     "noPropertyAccessFromIndexSignature": false,
     "skipLibCheck": true
   },
-  "include": [
-    "src/**/*.ts"
-, "scripts/fetch-deployments.ts"  ],
+  "include": [ "src/**/*.ts" ],
   "exclude": [
     "node_modules",
     "dist",
