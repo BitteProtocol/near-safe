@@ -1,6 +1,6 @@
 import { zeroAddress } from "viem";
 
-import { decodeSafeMessage } from "../../src/lib/safe-message";
+import { decodeSafeMessage } from "../../../src/lib/safe-message";
 
 describe("Multisend", () => {
   const plainMessage = `Welcome to OpenSea!
