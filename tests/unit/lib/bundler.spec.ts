@@ -1,4 +1,4 @@
-import { Erc4337Bundler, stripApiKey } from "../../src/lib/bundler";
+import { Erc4337Bundler, stripApiKey } from "../../../src/lib/bundler";
 
 describe("Safe Pack", () => {
   const entryPoint = "0x0000000071727De22E5E9d8BAf0edAc6f37da032";

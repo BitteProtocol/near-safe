@@ -1,7 +1,7 @@
 import { ethers } from "ethers";
 import { zeroAddress } from "viem";
 
-import { PaymasterData } from "../src";
+import { PaymasterData } from "../../src";
 import {
   PLACEHOLDER_SIG,
   containsValue,
@@ -9,7 +9,7 @@ import {
   packGas,
   packPaymasterData,
   packSignature,
-} from "../src/util";
+} from "../../src/util";
 
 describe("Utility Functions (mostly byte packing)", () => {
   it("PLACE_HOLDER_SIG", () => {

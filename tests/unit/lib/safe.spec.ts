@@ -1,6 +1,6 @@
 import { zeroAddress } from "viem";
 
-import { SafeContractSuite as ViemPack } from "../../src/lib/safe";
+import { SafeContractSuite as ViemPack } from "../../../src/lib/safe";
 import { ContractSuite as EthPack } from "../ethers-safe";
 
 describe("Safe Pack", () => {

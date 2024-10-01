@@ -14,8 +14,8 @@ import {
   MetaTransaction,
   UnsignedUserOperation,
   UserOperation,
-} from "../src/types";
-import { PLACEHOLDER_SIG, packGas, packPaymasterData } from "../src/util";
+} from "../../src/types";
+import { PLACEHOLDER_SIG, packGas, packPaymasterData } from "../../src/util";
 
 /**
  * All contracts used in account creation & execution

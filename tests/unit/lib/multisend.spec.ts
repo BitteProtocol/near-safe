@@ -1,4 +1,4 @@
-import { encodeMulti } from "../../src/lib/multisend";
+import { encodeMulti } from "../../../src/lib/multisend";
 
 describe("Multisend", () => {
   it("encodeMulti", () => {
