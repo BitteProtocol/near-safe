@@ -1,3 +1,4 @@
+import { decodeMulti } from "ethers-multisend";
 import { NearConfig } from "near-api-js/lib/near";
 import { FinalExecutionOutcome } from "near-api-js/lib/providers";
 import {
@@ -9,14 +10,22 @@ import {
   toPayload,
   PersonalSignParams,
 } from "near-ca";
-import { Address, Hash, Hex, serializeSignature } from "viem";
+import {
+  Address,
+  decodeFunctionData,
+  formatEther,
+  Hash,
+  Hex,
+  serializeSignature,
+} from "viem";
 
 import { Erc4337Bundler } from "./lib/bundler";
-import { encodeMulti } from "./lib/multisend";
+import { encodeMulti, isMultisendTx } from "./lib/multisend";
 import { SafeContractSuite } from "./lib/safe";
 import { decodeSafeMessage } from "./lib/safe-message";
 import {
   EncodedTxData,
+  EvmTransactionData,
   MetaTransaction,
   UserOperation,
   UserOperationReceipt,
@@ -241,6 +250,39 @@ export class NearSafe {
       this.pimlicoKey,
       chainId
     );
+  }
+
+  decodeTxData(data: EvmTransactionData): {
+    chainId: number;
+    costEstimate: string;
+    transactions: MetaTransaction[];
+  } {
+    // TODO: data.data may not always parse to UserOperation. We will have to handle the other cases.
+    const userOp: UserOperation = JSON.parse(data.data);
+    const { callGasLimit, maxFeePerGas, maxPriorityFeePerGas } = userOp;
+    const maxGasPrice = BigInt(maxFeePerGas) + BigInt(maxPriorityFeePerGas);
+    const { args } = decodeFunctionData({
+      abi: this.safePack.m4337.abi,
+      data: userOp.callData,
+    });
+
+    // Determine if sungular or double!
+    const transactions = isMultisendTx(args)
+      ? decodeMulti(args[2] as string)
+      : [
+          {
+            to: args[0],
+            value: args[1],
+            data: args[2],
+            operation: args[3],
+          } as MetaTransaction,
+        ];
+    return {
+      chainId: data.chainId,
+      // This is an upper bound on the gas fees (could be lower)
+      costEstimate: formatEther(BigInt(callGasLimit) * maxGasPrice),
+      transactions,
+    };
   }
 
   /**
