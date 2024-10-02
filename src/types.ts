@@ -1,5 +1,5 @@
 import { FunctionCallTransaction, SignArgs } from "near-ca";
-import { Address, Hash, Hex, ParseAbi, TransactionSerializable } from "viem";
+import { Address, Hex, ParseAbi } from "viem";
 
 export type SafeDeployments = {
   singleton: Deployment;
@@ -115,12 +115,15 @@ export interface MetaTransaction {
   readonly data: string;
   readonly operation?: OperationType;
 }
+
+export interface EvmTransactionData {
+  chainId: number;
+  data: string;
+  hash: string;
+}
+
 export interface EncodedTxData {
-  evmData: {
-    chainId: number;
-    data: string | TransactionSerializable;
-    hash: Hash;
-  };
+  evmData: EvmTransactionData;
   nearPayload: FunctionCallTransaction<{
     request: SignArgs;
   }>;

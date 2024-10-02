@@ -58,3 +58,11 @@ export function encodeMulti(
     }),
   };
 }
+
+export function isMultisendTx(args: readonly unknown[]): boolean {
+  const to = (args[0] as string).toLowerCase();
+  return (
+    to === MULTISEND_141.toLowerCase() ||
+    to === MULTISEND_CALLONLY_141.toLowerCase()
+  );
+}
