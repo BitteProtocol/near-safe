@@ -54,7 +54,7 @@ describe("Safe Pack", () => {
     );
   });
 
-  it("getSetup", async () => {
+  it("addressForSetup", async () => {
     const setup = viemPack.getSetup([zeroAddress]);
     const [eps0, vps0, eps1, vps1] = await Promise.all([
       ethersPack.addressForSetup(setup),
