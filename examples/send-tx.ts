@@ -68,11 +68,14 @@ async function main(): Promise<void> {
   const signature = await txManager.signTransaction(safeOpHash);
 
   console.log("Executing UserOp...");
-  const userOpReceipt = await txManager.executeTransaction(chainId, {
+  const userOpHash = await txManager.executeTransaction(chainId, {
     ...unsignedUserOp,
     signature,
   });
-  console.log("userOp Receipt", userOpReceipt);
+  console.log("userOpHash:", userOpHash);
+
+  const userOpReceipt = await txManager.getOpReceipt(chainId, userOpHash);
+  console.log("userOpReceipt:", userOpReceipt);
 }
 
 main().catch((err) => {

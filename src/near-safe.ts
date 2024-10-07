@@ -55,6 +55,12 @@ export class NearSafe {
   private pimlicoKey: string;
   private safeSaltNonce: string;
 
+  /**
+   * Creates a new instance of the `NearSafe` class using the provided configuration.
+   *
+   * @param {NearSafeConfig} config - The configuration object required to initialize the `NearSafe` instance, including the Pimlico key and safe salt nonce.
+   * @returns {Promise<NearSafe>} - A promise that resolves to a new `NearSafe` instance.
+   */
   static async create(config: NearSafeConfig): Promise<NearSafe> {
     const { pimlicoKey, safeSaltNonce } = config;
     const nearAdapter = await setupAdapter({ ...config });
@@ -78,6 +84,16 @@ export class NearSafe {
     );
   }
 
+  /**
+   * Constructs a new `NearSafe` object with the provided parameters.
+   *
+   * @param {NearEthAdapter} nearAdapter - The NEAR adapter used for interacting with the NEAR blockchain.
+   * @param {SafeContractSuite} safePack - A suite of contracts and utilities for managing the Safe contract.
+   * @param {string} pimlicoKey - A key required for authenticating with the Pimlico service.
+   * @param {string} setup - The setup string generated for the Safe contract.
+   * @param {Address} safeAddress - The address of the deployed Safe contract.
+   * @param {string} safeSaltNonce - A unique nonce used to differentiate the Safe setup.
+   */
   constructor(
     nearAdapter: NearEthAdapter,
     safePack: SafeContractSuite,
@@ -95,18 +111,45 @@ export class NearSafe {
     this.safeSaltNonce = safeSaltNonce;
   }
 
+  /**
+   * Retrieves the MPC (Multi-Party Computation) address associated with the NEAR adapter.
+   *
+   * @returns {Address} - The MPC address of the NEAR adapter.
+   */
   get mpcAddress(): Address {
     return this.nearAdapter.address;
   }
 
+  /**
+   * Retrieves the contract ID of the MPC contract associated with the NEAR adapter.
+   *
+   * @returns {string} - The contract ID of the MPC contract.
+   */
   get mpcContractId(): string {
     return this.nearAdapter.mpcContract.contract.contractId;
   }
 
+  /**
+   * Retrieves the balance of the Safe account on the specified EVM chain.
+   *
+   * @param {number} chainId - The ID of the blockchain network where the Safe account is located.
+   * @returns {Promise<bigint>} - A promise that resolves to the balance of the Safe account in wei.
+   */
   async getBalance(chainId: number): Promise<bigint> {
     return await getClient(chainId).getBalance({ address: this.address });
   }
 
+  /**
+   * Constructs a user operation for the specified chain, including necessary gas fees, nonce, and paymaster data.
+   * Warning: Uses a private ethRPC with sensitive Pimlico API key (should be run server side).
+   *
+   * @param {Object} args - The arguments for building the transaction.
+   * @param {number} args.chainId - The ID of the blockchain network where the transaction will be executed.
+   * @param {MetaTransaction[]} args.transactions - A list of meta-transactions to be included in the user operation.
+   * @param {boolean} args.usePaymaster - Flag indicating whether to use a paymaster for gas fees. If true, the transaction will be sponsored by the paymaster.
+   * @returns {Promise<UserOperation>} - A promise that resolves to a complete `UserOperation` object, including gas fees, nonce, and paymaster data.
+   * @throws {Error} - Throws an error if the transaction set is empty or if any operation fails during the building process.
+   */
   async buildTransaction(args: {
     chainId: number;
     transactions: MetaTransaction[];
@@ -147,15 +190,34 @@ export class NearSafe {
     return unsignedUserOp;
   }
 
+  /**
+   * Signs a transaction with the NEAR adapter using the provided operation hash.
+   *
+   * @param {Hex} safeOpHash - The hash of the user operation that needs to be signed.
+   * @returns {Promise<Hex>} - A promise that resolves to the packed signature in hexadecimal format.
+   */
   async signTransaction(safeOpHash: Hex): Promise<Hex> {
     const signature = await this.nearAdapter.sign(safeOpHash);
     return packSignature(signature);
   }
 
+  /**
+   * Computes the operation hash for a given user operation.
+   *
+   * @param {UserOperation} userOp - The user operation for which the hash needs to be computed.
+   * @returns {Promise<Hash>} - A promise that resolves to the hash of the provided user operation.
+   */
   async opHash(userOp: UserOperation): Promise<Hash> {
     return this.safePack.getOpHash(userOp);
   }
 
+  /**
+   * Encodes a request to sign a transaction using either a paymaster or the user's own funds.
+   *
+   * @param {SignRequestData} signRequest - The data required to create the signature request. This includes information such as the chain ID and other necessary fields for the transaction.
+   * @param {boolean} usePaymaster - Flag indicating whether to use a paymaster for gas fees. If true, the transaction will be sponsored by the paymaster.
+   * @returns {Promise<EncodedTxData>} - A promise that resolves to the encoded transaction data for the NEAR and EVM networks.
+   */
   async encodeSignRequest(
     signRequest: SignRequestData,
     usePaymaster: boolean
@@ -177,18 +239,29 @@ export class NearSafe {
       },
     };
   }
+
+  /**
+   * Broadcasts a user operation to the EVM network with a provided signature.
+   * Warning: Uses a private ethRPC with sensitive Pimlico API key (should be run server side).
+   *
+   * @param {number} chainId - The ID of the EVM network to which the transaction should be broadcasted.
+   * @param {FinalExecutionOutcome} outcome - The result of the NEAR transaction execution, which contains the necessary data to construct an EVM signature.
+   * @param {UserOperation} unsignedUserOp - The unsigned user operation to be broadcasted. This includes transaction data such as the destination address and data payload.
+   * @returns {Promise<{ signature: Hex; opHash: Hash }>} - A promise that resolves to an object containing the signature used and the hash of the executed user operation.
+   * @throws {Error} - Throws an error if the EVM broadcast fails, including the error message for debugging.
+   */
   async broadcastEvm(
     chainId: number,
     outcome: FinalExecutionOutcome,
     unsignedUserOp: UserOperation
-  ): Promise<{ signature: Hex; receipt: UserOperationReceipt }> {
+  ): Promise<{ signature: Hex; opHash: Hash }> {
     const signature = packSignature(
       serializeSignature(signatureFromOutcome(outcome))
     );
     try {
       return {
         signature,
-        receipt: await this.executeTransaction(chainId, {
+        opHash: await this.executeTransaction(chainId, {
           ...unsignedUserOp,
           signature,
         }),
@@ -200,26 +273,54 @@ export class NearSafe {
     }
   }
 
+  /**
+   * Executes a user operation on the specified blockchain network.
+   * Warning: Uses a private ethRPC with sensitive Pimlico API key (should be run server side).
+   *
+   * @param {number} chainId - The ID of the blockchain network on which to execute the transaction.
+   * @param {UserOperation} userOp - The user operation to be executed, typically includes the data and signatures necessary for the transaction.
+   * @returns {Promise<Hash>} - A promise that resolves to the hash of the executed transaction.
+   */
   async executeTransaction(
     chainId: number,
     userOp: UserOperation
-  ): Promise<UserOperationReceipt> {
-    const bundler = this.bundlerForChainId(chainId);
-    const userOpHash = await bundler.sendUserOperation(userOp);
-    console.log("UserOp Hash", userOpHash);
-
-    const userOpReceipt = await bundler.getUserOpReceipt(userOpHash);
-    console.log("userOp Receipt", userOpReceipt);
-
-    // Update safeNotDeployed after the first transaction
-    this.safeDeployed(chainId);
-    return userOpReceipt;
+  ): Promise<Hash> {
+    return this.bundlerForChainId(chainId).sendUserOperation(userOp);
   }
 
+  /**
+   * Retrieves the receipt of a previously executed user operation.
+   * Warning: Uses a private ethRPC with sensitive Pimlico API key (should be run server side).
+   *
+   * @param {number} chainId - The ID of the blockchain network where the operation was executed.
+   * @param {Hash} userOpHash - The hash of the user operation for which to retrieve the receipt.
+   * @returns {Promise<UserOperationReceipt>} - A promise that resolves to the receipt of the user operation, which includes status and logs.
+   */
+  async getOpReceipt(
+    chainId: number,
+    userOpHash: Hash
+  ): Promise<UserOperationReceipt> {
+    return this.bundlerForChainId(chainId).getUserOpReceipt(userOpHash);
+  }
+
+  /**
+   * Checks if the Safe contract is deployed on the specified chain.
+   *
+   * @param {number} chainId - The ID of the blockchain network where the Safe contract should be checked.
+   * @returns {Promise<boolean>} - A promise that resolves to `true` if the Safe contract is deployed, otherwise `false`.
+   */
   async safeDeployed(chainId: number): Promise<boolean> {
     return isContract(this.address, chainId);
   }
 
+  /**
+   * Determines if the Safe account has sufficient funds to cover the transaction costs.
+   *
+   * @param {number} chainId - The ID of the blockchain network where the Safe account is located.
+   * @param {MetaTransaction[]} transactions - A list of meta-transactions to be evaluated for funding.
+   * @param {bigint} gasCost - The estimated gas cost of executing the transactions.
+   * @returns {Promise<boolean>} - A promise that resolves to `true` if the Safe account has sufficient funds, otherwise `false`.
+   */
   async sufficientlyFunded(
     chainId: number,
     transactions: MetaTransaction[],
@@ -236,6 +337,12 @@ export class NearSafe {
     return txValue + gasCost < safeBalance;
   }
 
+  /**
+   * Creates a meta-transaction for adding a new owner to the Safe contract.
+   *
+   * @param {Address} address - The address of the new owner to be added.
+   * @returns {MetaTransaction} - A meta-transaction object for adding the new owner.
+   */
   addOwnerTx(address: Address): MetaTransaction {
     return {
       to: this.address,
@@ -244,6 +351,12 @@ export class NearSafe {
     };
   }
 
+  /**
+   * Creates and returns a new `Erc4337Bundler` instance for the specified chain.
+   *
+   * @param {number} chainId - The ID of the blockchain network for which the bundler is to be created.
+   * @returns {Erc4337Bundler} - A new instance of the `Erc4337Bundler` class configured for the specified chain.
+   */
   private bundlerForChainId(chainId: number): Erc4337Bundler {
     return new Erc4337Bundler(
       this.safePack.entryPoint.address,
@@ -252,6 +365,12 @@ export class NearSafe {
     );
   }
 
+  /**
+   * Decodes transaction data for a given EVM transaction and extracts relevant details.
+   *
+   * @param {EvmTransactionData} data - The raw transaction data to be decoded.
+   * @returns {{ chainId: number; costEstimate: string; transactions: MetaTransaction[] }} - An object containing the chain ID, estimated cost, and a list of decoded meta-transactions.
+   */
   decodeTxData(data: EvmTransactionData): {
     chainId: number;
     costEstimate: string;
@@ -266,7 +385,7 @@ export class NearSafe {
       data: userOp.callData,
     });
 
-    // Determine if sungular or double!
+    // Determine if singular or double!
     const transactions = isMultisendTx(args)
       ? decodeMulti(args[2] as string)
       : [
