@@ -141,6 +141,7 @@ export class NearSafe {
 
   /**
    * Constructs a user operation for the specified chain, including necessary gas fees, nonce, and paymaster data.
+   * Warning: Uses a private ethRPC with sensitive Pimlico API key (should be run server side).
    *
    * @param {Object} args - The arguments for building the transaction.
    * @param {number} args.chainId - The ID of the blockchain network where the transaction will be executed.
@@ -241,6 +242,7 @@ export class NearSafe {
 
   /**
    * Broadcasts a user operation to the EVM network with a provided signature.
+   * Warning: Uses a private ethRPC with sensitive Pimlico API key (should be run server side).
    *
    * @param {number} chainId - The ID of the EVM network to which the transaction should be broadcasted.
    * @param {FinalExecutionOutcome} outcome - The result of the NEAR transaction execution, which contains the necessary data to construct an EVM signature.
@@ -273,6 +275,7 @@ export class NearSafe {
 
   /**
    * Executes a user operation on the specified blockchain network.
+   * Warning: Uses a private ethRPC with sensitive Pimlico API key (should be run server side).
    *
    * @param {number} chainId - The ID of the blockchain network on which to execute the transaction.
    * @param {UserOperation} userOp - The user operation to be executed, typically includes the data and signatures necessary for the transaction.
@@ -287,6 +290,7 @@ export class NearSafe {
 
   /**
    * Retrieves the receipt of a previously executed user operation.
+   * Warning: Uses a private ethRPC with sensitive Pimlico API key (should be run server side).
    *
    * @param {number} chainId - The ID of the blockchain network where the operation was executed.
    * @param {Hash} userOpHash - The hash of the user operation for which to retrieve the receipt.
