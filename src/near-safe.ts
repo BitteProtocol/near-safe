@@ -24,6 +24,7 @@ import { encodeMulti, isMultisendTx } from "./lib/multisend";
 import { SafeContractSuite } from "./lib/safe";
 import { decodeSafeMessage } from "./lib/safe-message";
 import {
+  DecodedMultisend,
   EncodedTxData,
   EvmTransactionData,
   MetaTransaction,
@@ -371,11 +372,7 @@ export class NearSafe {
    * @param {EvmTransactionData} data - The raw transaction data to be decoded.
    * @returns {{ chainId: number; costEstimate: string; transactions: MetaTransaction[] }} - An object containing the chain ID, estimated cost, and a list of decoded meta-transactions.
    */
-  decodeTxData(data: EvmTransactionData): {
-    chainId: number;
-    costEstimate: string;
-    transactions: MetaTransaction[];
-  } {
+  decodeTxData(data: EvmTransactionData): DecodedMultisend {
     // TODO: data.data may not always parse to UserOperation. We will have to handle the other cases.
     const userOp: UserOperation = JSON.parse(data.data);
     const { callGasLimit, maxFeePerGas, maxPriorityFeePerGas } = userOp;
