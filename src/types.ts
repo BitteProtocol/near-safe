@@ -244,7 +244,9 @@ export interface EvmTransactionData {
 export interface DecodedMultisend {
   /** The chain ID of the network where the multisend transaction is being executed. */
   chainId: number;
-  /** The estimated cost of the multisend transaction in Ether. */
+  /** The estimated cost of the multisend transaction in Ether.
+   *  This is an upper bound on the transaction fee (could wind up lower).
+   */
   costEstimate: string;
   /** The list of meta-transactions included in the multisend. */
   transactions: MetaTransaction[];
