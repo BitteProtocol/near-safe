@@ -122,6 +122,12 @@ export interface EvmTransactionData {
   hash: string;
 }
 
+export interface DecodedMultisend {
+  chainId: number;
+  costEstimate: string;
+  transactions: MetaTransaction[];
+}
+
 export interface EncodedTxData {
   evmData: EvmTransactionData;
   nearPayload: FunctionCallTransaction<{
