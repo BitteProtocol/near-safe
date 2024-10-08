@@ -24,10 +24,14 @@ function bundlerUrl(chainId: number, apikey: string): string {
   return `https://api.pimlico.io/v2/${chainId}/rpc?apikey=${apikey}`;
 }
 
+type SponsorshipPolicy = {
+  sponsorshipPolicyId: string;
+};
+
 type BundlerRpcSchema = [
   {
     Method: "pm_sponsorUserOperation";
-    Parameters: [UnsignedUserOperation, Address];
+    Parameters: [UnsignedUserOperation, Address, SponsorshipPolicy | undefined];
     ReturnType: PaymasterData;
   },
   {
@@ -77,6 +81,7 @@ export class Erc4337Bundler {
           params: [
             { ...rawUserOp, signature: PLACEHOLDER_SIG },
             this.entryPointAddress,
+            undefined,
           ],
         })
       );
