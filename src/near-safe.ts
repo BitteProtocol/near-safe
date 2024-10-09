@@ -208,8 +208,8 @@ export class NearSafe {
    * @param {UserOperation} userOp - The user operation for which the hash needs to be computed.
    * @returns {Promise<Hash>} - A promise that resolves to the hash of the provided user operation.
    */
-  async opHash(userOp: UserOperation): Promise<Hash> {
-    return this.safePack.getOpHash(userOp);
+  async opHash(chainId: number, userOp: UserOperation): Promise<Hash> {
+    return this.safePack.getOpHash(chainId, userOp);
   }
 
   /**
@@ -455,11 +455,11 @@ export class NearSafe {
           transactions,
           usePaymaster,
         });
-        const opHash = await this.opHash(userOp);
+        const opHash = await this.opHash(chainId, userOp);
         return {
           payload: toPayload(opHash),
           evmMessage: JSON.stringify(userOp),
-          hash: await this.opHash(userOp),
+          hash: await this.opHash(chainId, userOp),
         };
       }
     }

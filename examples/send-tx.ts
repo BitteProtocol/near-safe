@@ -46,7 +46,7 @@ async function main(): Promise<void> {
     usePaymaster,
   });
   console.log("Unsigned UserOp", unsignedUserOp);
-  const safeOpHash = await txManager.opHash(unsignedUserOp);
+  const safeOpHash = await txManager.opHash(chainId, unsignedUserOp);
   console.log("Safe Op Hash", safeOpHash);
 
   // TODO: Evaluate gas cost (in ETH)

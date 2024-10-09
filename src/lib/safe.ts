@@ -107,7 +107,10 @@ export class SafeContractSuite {
     });
   }
 
-  async getOpHash(unsignedUserOp: UserOperation): Promise<Hash> {
+  async getOpHash(
+    chainId: number,
+    unsignedUserOp: UserOperation
+  ): Promise<Hash> {
     const {
       factory,
       factoryData,
@@ -116,7 +119,8 @@ export class SafeContractSuite {
       maxPriorityFeePerGas,
       maxFeePerGas,
     } = unsignedUserOp;
-    const opHash = await this.dummyClient.readContract({
+    const client = await getClient(chainId);
+    const opHash = await client.readContract({
       address: this.m4337.address,
       abi: this.m4337.abi,
       functionName: "getOperationHash",
