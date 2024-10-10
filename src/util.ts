@@ -9,6 +9,8 @@ import {
   isHex,
   parseTransaction,
   zeroAddress,
+  toBytes,
+  keccak256,
 } from "viem";
 
 import { PaymasterData, MetaTransaction } from "./types";
@@ -83,4 +85,14 @@ export function metaTransactionsFromRequest(
     value: tx.value || "0x00",
     data: tx.data || "0x",
   }));
+}
+
+export function saltNonceFromMessage(input: string): string {
+  // Convert the string to bytes (UTF-8 encoding)
+  const inputBytes = toBytes(input);
+  // Compute the keccak256 hash of the input bytes
+  const hash = keccak256(inputBytes);
+  // Convert the resulting hash (which is in hex) to a BigInt
+  const uint256Value = BigInt(hash);
+  return uint256Value.toString();
 }

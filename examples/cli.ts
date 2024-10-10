@@ -1,7 +1,7 @@
 import yargs from "yargs";
 import { hideBin } from "yargs/helpers";
 
-import { UserOptions } from "../src";
+import { DEFAULT_SAFE_SALT_NONCE, UserOptions } from "../src";
 
 interface ScriptEnv {
   nearAccountId: string;
@@ -42,7 +42,7 @@ export async function loadArgs(): Promise<UserOptions> {
     .option("safeSaltNonce", {
       type: "string",
       description: "Salt nonce used for the Safe deployment",
-      default: "0",
+      default: DEFAULT_SAFE_SALT_NONCE,
     })
     .option("mpcContractId", {
       type: "string",

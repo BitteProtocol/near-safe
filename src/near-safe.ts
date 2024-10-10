@@ -9,6 +9,7 @@ import {
   EthSignParams,
   toPayload,
   PersonalSignParams,
+  mockAdapter,
 } from "near-ca";
 import {
   Address,
@@ -37,13 +38,16 @@ import {
   metaTransactionsFromRequest,
   packSignature,
 } from "./util";
+import { DEFAULT_SAFE_SALT_NONCE } from "./constants";
 
 export interface NearSafeConfig {
+  // Adapter Config:
   accountId: string;
   mpcContractId: string;
-  pimlicoKey: string;
   nearConfig?: NearConfig;
   privateKey?: string;
+  // Safe Config:
+  pimlicoKey: string;
   safeSaltNonce?: string;
 }
 
@@ -64,6 +68,7 @@ export class NearSafe {
    */
   static async create(config: NearSafeConfig): Promise<NearSafe> {
     const { pimlicoKey, safeSaltNonce } = config;
+    // const nearAdapter = await mockAdapter();
     const nearAdapter = await setupAdapter({ ...config });
     const safePack = new SafeContractSuite();
 
@@ -81,7 +86,7 @@ export class NearSafe {
       pimlicoKey,
       setup,
       safeAddress,
-      safeSaltNonce || "0"
+      safeSaltNonce || DEFAULT_SAFE_SALT_NONCE
     );
   }
 
@@ -127,7 +132,7 @@ export class NearSafe {
    * @returns {string} - The contract ID of the MPC contract.
    */
   get mpcContractId(): string {
-    return this.nearAdapter.mpcContract.contract.contractId;
+    return this.nearAdapter.mpcContract.accountId();
   }
 
   /**
