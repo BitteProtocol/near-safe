@@ -1,6 +1,6 @@
 import dotenv from "dotenv";
 import { ethers } from "ethers";
-import { decodeFunctionData, isAddress, parseAbi, toHex } from "viem";
+import { isAddress } from "viem";
 
 import { loadArgs, loadEnv } from "./cli";
 import { DEFAULT_SAFE_SALT_NONCE, NearSafe } from "../src";
