@@ -6,10 +6,10 @@
   "author": "bh2smith",
   "repository": {
     "type": "git",
-    "url": "https://github.com/mintbase/near-safe.git"
+    "url": "https://github.com/BitteProtocol/near-safe"
   },
   "bugs": {
-    "url": "https://github.com/mintbase/near-safe/issues"
+    "url": "https://github.com/BitteProtocol/near-safe/issues"
   },
   "engines": {
     "node": ">=20.0.0"
