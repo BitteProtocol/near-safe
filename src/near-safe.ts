@@ -9,7 +9,6 @@ import {
   EthSignParams,
   toPayload,
   PersonalSignParams,
-  mockAdapter,
 } from "near-ca";
 import {
   Address,
@@ -20,6 +19,7 @@ import {
   serializeSignature,
 } from "viem";
 
+import { DEFAULT_SAFE_SALT_NONCE } from "./constants";
 import { Erc4337Bundler } from "./lib/bundler";
 import { encodeMulti, isMultisendTx } from "./lib/multisend";
 import { SafeContractSuite } from "./lib/safe";
@@ -38,7 +38,6 @@ import {
   metaTransactionsFromRequest,
   packSignature,
 } from "./util";
-import { DEFAULT_SAFE_SALT_NONCE } from "./constants";
 
 export interface NearSafeConfig {
   // Adapter Config:

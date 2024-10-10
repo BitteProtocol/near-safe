@@ -57,7 +57,6 @@ export class SafeContractSuite {
         [keccak256(setup), BigInt(saltNonce || "0")]
       )
     );
-    console.log("SALT", salt);
 
     // abi.encodePacked(type(SafeProxy).creationCode, uint256(uint160(_singleton)));
     // cf: https://github.com/safe-global/safe-smart-account/blob/499b17ad0191b575fcadc5cb5b8e3faeae5391ae/contracts/proxies/SafeProxyFactory.sol#L29
