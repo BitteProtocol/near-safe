@@ -3,7 +3,7 @@ import { ethers } from "ethers";
 import { isAddress } from "viem";
 
 import { loadArgs, loadEnv } from "./cli";
-import { NearSafe } from "../src";
+import { DEFAULT_SAFE_SALT_NONCE, NearSafe } from "../src";
 
 dotenv.config();
 
@@ -18,6 +18,7 @@ async function main(): Promise<void> {
     mpcContractId,
     pimlicoKey,
     privateKey: nearAccountPrivateKey,
+    safeSaltNonce: DEFAULT_SAFE_SALT_NONCE,
   });
   const deployed = await txManager.safeDeployed(chainId);
   console.log("Safe Deployed:", deployed);

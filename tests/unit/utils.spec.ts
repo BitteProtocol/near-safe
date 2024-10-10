@@ -1,7 +1,7 @@
 import { ethers } from "ethers";
 import { zeroAddress } from "viem";
 
-import { PaymasterData } from "../../src";
+import { DEFAULT_SAFE_SALT_NONCE, PaymasterData } from "../../src";
 import {
   PLACEHOLDER_SIG,
   containsValue,
@@ -9,6 +9,7 @@ import {
   packGas,
   packPaymasterData,
   packSignature,
+  saltNonceFromMessage,
 } from "../../src/util";
 
 describe("Utility Functions (mostly byte packing)", () => {
@@ -74,5 +75,11 @@ describe("Utility Functions (mostly byte packing)", () => {
     expect(
       await isContract("0x9008D19f58AAbD9eD0D60971565AA8510560ab41", chainId)
     ).toBe(true);
+  });
+  it("saltNonceFromMessage", async () => {
+    expect(saltNonceFromMessage("bitteprotocol/near-safe")).toBe(
+      DEFAULT_SAFE_SALT_NONCE
+    );
+    // console.log("DEFAULT_SAFE_SALT_NONCE", DEFAULT_SAFE_SALT_NONCE);
   });
 });

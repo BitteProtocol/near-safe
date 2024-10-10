@@ -19,6 +19,7 @@ import {
   serializeSignature,
 } from "viem";
 
+import { DEFAULT_SAFE_SALT_NONCE } from "./constants";
 import { Erc4337Bundler } from "./lib/bundler";
 import { encodeMulti, isMultisendTx } from "./lib/multisend";
 import { SafeContractSuite } from "./lib/safe";
@@ -39,11 +40,13 @@ import {
 } from "./util";
 
 export interface NearSafeConfig {
+  // Adapter Config:
   accountId: string;
   mpcContractId: string;
-  pimlicoKey: string;
   nearConfig?: NearConfig;
   privateKey?: string;
+  // Safe Config:
+  pimlicoKey: string;
   safeSaltNonce?: string;
 }
 
@@ -64,6 +67,7 @@ export class NearSafe {
    */
   static async create(config: NearSafeConfig): Promise<NearSafe> {
     const { pimlicoKey, safeSaltNonce } = config;
+    // const nearAdapter = await mockAdapter();
     const nearAdapter = await setupAdapter({ ...config });
     const safePack = new SafeContractSuite();
 
@@ -81,7 +85,7 @@ export class NearSafe {
       pimlicoKey,
       setup,
       safeAddress,
-      safeSaltNonce || "0"
+      safeSaltNonce || DEFAULT_SAFE_SALT_NONCE
     );
   }
 
@@ -127,7 +131,7 @@ export class NearSafe {
    * @returns {string} - The contract ID of the MPC contract.
    */
   get mpcContractId(): string {
-    return this.nearAdapter.mpcContract.contract.contractId;
+    return this.nearAdapter.mpcContract.accountId();
   }
 
   /**
