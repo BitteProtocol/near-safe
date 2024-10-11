@@ -158,9 +158,9 @@ export class NearSafe {
   async buildTransaction(args: {
     chainId: number;
     transactions: MetaTransaction[];
-    usePaymaster: boolean;
+    sponsorshipPolicy?: string;
   }): Promise<UserOperation> {
-    const { transactions, usePaymaster, chainId } = args;
+    const { transactions, sponsorshipPolicy, chainId } = args;
     if (transactions.length === 0) {
       throw new Error("Empty transaction set!");
     }
@@ -189,8 +189,8 @@ export class NearSafe {
 
     const paymasterData = await bundler.getPaymasterData(
       rawUserOp,
-      usePaymaster,
-      !safeDeployed
+      !safeDeployed,
+      sponsorshipPolicy
     );
 
     const unsignedUserOp = { ...rawUserOp, ...paymasterData };
@@ -228,11 +228,11 @@ export class NearSafe {
    */
   async encodeSignRequest(
     signRequest: SignRequestData,
-    usePaymaster: boolean
+    sponsorshipPolicy?: string
   ): Promise<EncodedTxData> {
     const { payload, evmMessage, hash } = await this.requestRouter(
       signRequest,
-      usePaymaster
+      sponsorshipPolicy
     );
     return {
       nearPayload: await this.nearAdapter.mpcContract.encodeSignatureRequestTx({
@@ -420,7 +420,7 @@ export class NearSafe {
    */
   async requestRouter(
     { method, chainId, params }: SignRequestData,
-    usePaymaster: boolean
+    sponsorshipPolicy?: string
   ): Promise<{
     evmMessage: string;
     payload: number[];
@@ -460,7 +460,7 @@ export class NearSafe {
         const userOp = await this.buildTransaction({
           chainId,
           transactions,
-          usePaymaster,
+          ...(sponsorshipPolicy ? { sponsorshipPolicy } : {}),
         });
         const opHash = await this.opHash(chainId, userOp);
         return {
