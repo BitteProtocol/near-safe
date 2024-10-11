@@ -21,7 +21,7 @@ async function main(): Promise<void> {
     safeSaltNonce: DEFAULT_SAFE_SALT_NONCE,
   });
   const deployed = await txManager.safeDeployed(chainId);
-  console.log("Safe Deployed:", deployed);
+  console.log(`Safe Deployed (on chainId ${chainId}): ${deployed}`);
   const transactions = [
     // TODO: Replace dummy transaction with real user transaction.
     {

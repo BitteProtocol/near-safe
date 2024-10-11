@@ -1,7 +1,7 @@
 import { ethers } from "ethers";
 import { zeroAddress } from "viem";
 
-import { DEFAULT_SAFE_SALT_NONCE, PaymasterData } from "../../src";
+import { PaymasterData } from "../../src";
 import {
   PLACEHOLDER_SIG,
   containsValue,
@@ -77,9 +77,8 @@ describe("Utility Functions (mostly byte packing)", () => {
     ).toBe(true);
   });
   it("saltNonceFromMessage", async () => {
-    expect(saltNonceFromMessage("bitteprotocol/near-safe")).toBe(
-      DEFAULT_SAFE_SALT_NONCE
+    expect(saltNonceFromMessage("bitte/near-safe")).toBe(
+      "26371153660914144112327059280066269158753782528888197421682303285265580464377"
     );
-    // console.log("DEFAULT_SAFE_SALT_NONCE", DEFAULT_SAFE_SALT_NONCE);
   });
 });
