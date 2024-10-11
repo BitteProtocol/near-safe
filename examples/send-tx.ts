@@ -1,5 +1,6 @@
 import dotenv from "dotenv";
 import { ethers } from "ethers";
+import { isTestnet, Network } from "near-ca";
 import { isAddress } from "viem";
 
 import { loadArgs, loadEnv } from "./cli";
@@ -30,12 +31,12 @@ async function main(): Promise<void> {
       data: "0xbeef",
     },
   ];
-  // Add Recovery if safe not deployed & recoveryAddress was provided.
-  if (
-    !(await txManager.safeDeployed(chainId)) &&
-    recoveryAddress &&
-    isAddress(recoveryAddress)
-  ) {
+  // Add Recovery upon request
+  if (recoveryAddress) {
+    if (!isAddress(recoveryAddress)) {
+      console.error("Invalid Recovery address (try again)", recoveryAddress);
+      process.exit(0); // soft exit
+    }
     const recoveryTx = txManager.addOwnerTx(recoveryAddress);
     // This would happen (sequentially) after the userTx, but all executed in a single
     transactions.push(recoveryTx);
@@ -58,7 +59,7 @@ async function main(): Promise<void> {
     (await txManager.sufficientlyFunded(
       chainId,
       transactions,
-      !!sponsorshipPolicy ? 0n : gasCost
+      sponsorshipPolicy || isTestnet(chainId) ? 0n : gasCost
     ));
   if (!sufficientFunded) {
     console.warn(
@@ -75,10 +76,10 @@ async function main(): Promise<void> {
     ...unsignedUserOp,
     signature,
   });
-  console.log("userOpHash:", userOpHash);
-
-  const userOpReceipt = await txManager.getOpReceipt(chainId, userOpHash);
-  console.log("userOpReceipt:", userOpReceipt);
+  const { receipt } = await txManager.getOpReceipt(chainId, userOpHash);
+  console.log(
+    `View your transaction at: ${Network.fromChainId(chainId).scanUrl}/tx/${receipt.transactionHash}`
+  );
 }
 
 main().catch((err) => {

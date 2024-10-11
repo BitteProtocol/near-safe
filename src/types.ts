@@ -45,6 +45,8 @@ export interface UnsignedUserOperation {
   maxPriorityFeePerGas: Hex;
   /** Maximum fee per gas unit for the transaction. */
   maxFeePerGas: Hex;
+  /** Optional signature for the user operation. */
+  signature?: Hex;
 }
 
 /**
@@ -57,8 +59,6 @@ export interface UserOperation extends UnsignedUserOperation {
   callGasLimit: Hex;
   /** The gas used before verification begins. */
   preVerificationGas: Hex;
-  /** Optional signature for the user operation. */
-  signature?: Hex;
 }
 
 /**

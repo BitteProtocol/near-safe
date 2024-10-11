@@ -9,6 +9,7 @@ import {
   EthSignParams,
   toPayload,
   PersonalSignParams,
+  isTestnet,
 } from "near-ca";
 import {
   Address,
@@ -190,6 +191,7 @@ export class NearSafe {
     const paymasterData = await bundler.getPaymasterData(
       rawUserOp,
       !safeDeployed,
+      isTestnet(chainId),
       sponsorshipPolicy
     );
 

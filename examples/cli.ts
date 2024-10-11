@@ -1,3 +1,4 @@
+import { Address, isAddress } from "viem";
 import yargs from "yargs";
 import { hideBin } from "yargs/helpers";
 
@@ -35,7 +36,7 @@ export async function loadArgs(): Promise<UserOptions> {
     .option("recoveryAddress", {
       type: "string",
       description:
-        "Recovery address to be attached as owner of the Safe (immediately adter deployment)",
+        "Recovery address to be attached as owner of the Safe (immediately after deployment)",
     })
     .option("safeSaltNonce", {
       type: "string",
