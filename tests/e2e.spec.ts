@@ -23,7 +23,6 @@ describe("Near Safe Requests", () => {
             ...irrelevantData,
           },
         ],
-        usePaymaster: true,
       })
     ).resolves.not.toThrow();
     // Can't send raw messages to Safe Contracts.
@@ -36,7 +35,6 @@ describe("Near Safe Requests", () => {
             ...irrelevantData,
           },
         ],
-        usePaymaster: true,
       })
     ).rejects.toThrow();
   });

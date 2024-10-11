@@ -1,5 +1,6 @@
 import dotenv from "dotenv";
 import { ethers } from "ethers";
+import { isTestnet, Network } from "near-ca";
 import { isAddress } from "viem";
 
 import { loadArgs, loadEnv } from "./cli";
@@ -10,7 +11,7 @@ dotenv.config();
 async function main(): Promise<void> {
   const [
     { pimlicoKey, nearAccountId, nearAccountPrivateKey },
-    { mpcContractId, recoveryAddress, usePaymaster },
+    { mpcContractId, recoveryAddress, sponsorshipPolicy },
   ] = await Promise.all([loadEnv(), loadArgs()]);
   const chainId = 11155111;
   const txManager = await NearSafe.create({
@@ -30,12 +31,12 @@ async function main(): Promise<void> {
       data: "0xbeef",
     },
   ];
-  // Add Recovery if safe not deployed & recoveryAddress was provided.
-  if (
-    !(await txManager.safeDeployed(chainId)) &&
-    recoveryAddress &&
-    isAddress(recoveryAddress)
-  ) {
+  // Add Recovery upon request
+  if (recoveryAddress) {
+    if (!isAddress(recoveryAddress)) {
+      console.error("Invalid Recovery address (try again)", recoveryAddress);
+      process.exit(0); // soft exit
+    }
     const recoveryTx = txManager.addOwnerTx(recoveryAddress);
     // This would happen (sequentially) after the userTx, but all executed in a single
     transactions.push(recoveryTx);
@@ -44,7 +45,7 @@ async function main(): Promise<void> {
   const unsignedUserOp = await txManager.buildTransaction({
     chainId,
     transactions,
-    usePaymaster,
+    sponsorshipPolicy,
   });
   console.log("Unsigned UserOp", unsignedUserOp);
   const safeOpHash = await txManager.opHash(chainId, unsignedUserOp);
@@ -53,11 +54,13 @@ async function main(): Promise<void> {
   // TODO: Evaluate gas cost (in ETH)
   const gasCost = ethers.parseEther("0.01");
   // Whenever not using paymaster, or on value transfer, the Safe must be funded.
-  const sufficientFunded = await txManager.sufficientlyFunded(
-    chainId,
-    transactions,
-    usePaymaster ? 0n : gasCost
-  );
+  const sufficientFunded =
+    sponsorshipPolicy ||
+    (await txManager.sufficientlyFunded(
+      chainId,
+      transactions,
+      sponsorshipPolicy || isTestnet(chainId) ? 0n : gasCost
+    ));
   if (!sufficientFunded) {
     console.warn(
       `Safe ${txManager.address} insufficiently funded to perform this transaction. Exiting...`
@@ -73,10 +76,10 @@ async function main(): Promise<void> {
     ...unsignedUserOp,
     signature,
   });
-  console.log("userOpHash:", userOpHash);
-
-  const userOpReceipt = await txManager.getOpReceipt(chainId, userOpHash);
-  console.log("userOpReceipt:", userOpReceipt);
+  const { receipt } = await txManager.getOpReceipt(chainId, userOpHash);
+  console.log(
+    `View your transaction at: ${Network.fromChainId(chainId).scanUrl}/tx/${receipt.transactionHash}`
+  );
 }
 
 main().catch((err) => {

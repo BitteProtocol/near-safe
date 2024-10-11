@@ -24,10 +24,16 @@ function bundlerUrl(chainId: number, apikey: string): string {
   return `https://api.pimlico.io/v2/${chainId}/rpc?apikey=${apikey}`;
 }
 
+type SponsorshipPolicy = { sponsorshipPolicyId: string };
+
+type SponsorshipParams =
+  | [UnsignedUserOperation, Address, SponsorshipPolicy]
+  | [UnsignedUserOperation, Address];
+
 type BundlerRpcSchema = [
   {
     Method: "pm_sponsorUserOperation";
-    Parameters: [UnsignedUserOperation, Address];
+    Parameters: SponsorshipParams;
     ReturnType: PaymasterData;
   },
   {
@@ -65,23 +71,32 @@ export class Erc4337Bundler {
 
   async getPaymasterData(
     rawUserOp: UnsignedUserOperation,
-    usePaymaster: boolean,
-    safeNotDeployed: boolean
+    safeNotDeployed: boolean,
+    isTestnet: boolean,
+    sponsorshipPolicy?: string
   ): Promise<PaymasterData> {
     // TODO: Keep this option out of the bundler
-    if (usePaymaster) {
-      console.log("Requesting paymaster data...");
-      return handleRequest<PaymasterData>(() =>
-        this.client.request({
-          method: "pm_sponsorUserOperation",
-          params: [
-            { ...rawUserOp, signature: PLACEHOLDER_SIG },
-            this.entryPointAddress,
-          ],
-        })
-      );
+    if (sponsorshipPolicy || isTestnet) {
+      return this.sponsorUserOperation(rawUserOp, sponsorshipPolicy);
     }
     return defaultPaymasterData(safeNotDeployed);
+  }
+
+  private async sponsorUserOperation(
+    userOp: UnsignedUserOperation,
+    sponsorshipPolicy?: string
+  ): Promise<PaymasterData> {
+    const params: SponsorshipParams = [
+      { ...userOp, signature: PLACEHOLDER_SIG },
+      this.entryPointAddress,
+      ...(sponsorshipPolicy
+        ? [{ sponsorshipPolicyId: sponsorshipPolicy }]
+        : []),
+    ] as SponsorshipParams;
+
+    return handleRequest<PaymasterData>(() =>
+      this.client.request({ method: "pm_sponsorUserOperation", params })
+    );
   }
 
   async sendUserOperation(userOp: UserOperation): Promise<Hash> {
@@ -157,9 +172,4 @@ const defaultPaymasterData = (safeNotDeployed: boolean): PaymasterData => {
 export function stripApiKey(error: unknown): string {
   const message = error instanceof Error ? error.message : String(error);
   return message.replace(/(apikey=)[^\s&]+/, "$1***");
-  // Could also do this with slicing.
-  // const keyStart = message.indexOf("apikey=") + 7;
-  // // If no apikey in the message, return it as is.
-  // if (keyStart === -1) return message;
-  // return `${message.slice(0, keyStart)}***${message.slice(keyStart + 36)}`;
 }
