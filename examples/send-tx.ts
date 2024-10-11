@@ -10,7 +10,7 @@ dotenv.config();
 async function main(): Promise<void> {
   const [
     { pimlicoKey, nearAccountId, nearAccountPrivateKey },
-    { mpcContractId, recoveryAddress, usePaymaster },
+    { mpcContractId, recoveryAddress, sponsorshipPolicy },
   ] = await Promise.all([loadEnv(), loadArgs()]);
   const chainId = 11155111;
   const txManager = await NearSafe.create({
@@ -44,7 +44,7 @@ async function main(): Promise<void> {
   const unsignedUserOp = await txManager.buildTransaction({
     chainId,
     transactions,
-    usePaymaster,
+    sponsorshipPolicy,
   });
   console.log("Unsigned UserOp", unsignedUserOp);
   const safeOpHash = await txManager.opHash(chainId, unsignedUserOp);
@@ -53,11 +53,13 @@ async function main(): Promise<void> {
   // TODO: Evaluate gas cost (in ETH)
   const gasCost = ethers.parseEther("0.01");
   // Whenever not using paymaster, or on value transfer, the Safe must be funded.
-  const sufficientFunded = await txManager.sufficientlyFunded(
-    chainId,
-    transactions,
-    usePaymaster ? 0n : gasCost
-  );
+  const sufficientFunded =
+    sponsorshipPolicy ||
+    (await txManager.sufficientlyFunded(
+      chainId,
+      transactions,
+      !!sponsorshipPolicy ? 0n : gasCost
+    ));
   if (!sufficientFunded) {
     console.warn(
       `Safe ${txManager.address} insufficiently funded to perform this transaction. Exiting...`
