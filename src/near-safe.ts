@@ -164,6 +164,9 @@ export class NearSafe {
     if (transactions.length === 0) {
       throw new Error("Empty transaction set!");
     }
+    console.log(
+      `Building UserOp on chainId ${chainId} with ${transactions.length} transaction(s)`
+    );
     const bundler = this.bundlerForChainId(chainId);
     const [gasFees, nonce, safeDeployed] = await Promise.all([
       bundler.getGasPrice(),

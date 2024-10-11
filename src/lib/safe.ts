@@ -1,5 +1,6 @@
 import {
   Address,
+  concat,
   encodeFunctionData,
   encodePacked,
   getCreate2Address,
@@ -12,6 +13,7 @@ import {
 } from "viem";
 
 import { SAFE_DEPLOYMENTS } from "../_gen/deployments";
+import { USER_OP_IDENTIFIER } from "../constants";
 import {
   Deployment,
   GasPrice,
@@ -171,16 +173,20 @@ export class SafeContractSuite {
       nonce: toHex(nonce),
       ...this.factoryDataForSetup(safeNotDeployed, setup, safeSaltNonce),
       // <https://github.com/safe-global/safe-modules/blob/9a18245f546bf2a8ed9bdc2b04aae44f949ec7a0/modules/4337/contracts/Safe4337Module.sol#L172>
-      callData: encodeFunctionData({
-        abi: this.m4337.abi,
-        functionName: "executeUserOp",
-        args: [
-          txData.to,
-          BigInt(txData.value),
-          txData.data,
-          txData.operation || 0,
-        ],
-      }),
+      callData: concat([
+        encodeFunctionData({
+          abi: this.m4337.abi,
+          functionName: "executeUserOp",
+          args: [
+            txData.to,
+            BigInt(txData.value),
+            txData.data,
+            txData.operation || 0,
+          ],
+        }),
+        // Append On-Chain Identifier:
+        USER_OP_IDENTIFIER,
+      ]),
       ...feeData,
     };
   }

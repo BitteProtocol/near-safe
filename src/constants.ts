@@ -1,6 +1,7 @@
-import { saltNonceFromMessage } from "./util";
+import { toHex } from "viem";
 
-// 44996514629493770112085868524049986283670269803674596648610276180743582360860
-export const DEFAULT_SAFE_SALT_NONCE = saltNonceFromMessage(
-  "bitteprotocol/near-safe"
-);
+const DOMAIN_SEPARATOR = "bitte/near-safe";
+// 0x62697474652f6e6561722d7361666500
+export const USER_OP_IDENTIFIER = toHex(DOMAIN_SEPARATOR, { size: 16 });
+// 130811896738364114529934864114944206080
+export const DEFAULT_SAFE_SALT_NONCE = BigInt(USER_OP_IDENTIFIER).toString();
