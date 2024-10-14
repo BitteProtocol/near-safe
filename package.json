@@ -36,15 +36,15 @@
     "start": "yarn example",
     "example": "tsx examples/send-tx.ts",
     "lint": "eslint . --ignore-pattern dist/",
-    "test": "jest",
     "fmt": "prettier --write '{src,examples,tests}/**/*.{js,jsx,ts,tsx}' && yarn lint --fix",
+    "test": "jest",
     "all": "yarn fmt && yarn lint && yarn build"
   },
   "dependencies": {
     "@safe-global/safe-gateway-typescript-sdk": "^3.22.2",
     "ethers-multisend": "^3.1.0",
     "near-api-js": "^5.0.0",
-    "near-ca": "^0.5.9",
+    "near-ca": "^0.5.10",
     "semver": "^7.6.3",
     "viem": "^2.16.5"
   },
