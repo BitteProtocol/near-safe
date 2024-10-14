@@ -44,11 +44,7 @@
     "@safe-global/safe-gateway-typescript-sdk": "^3.22.2",
     "ethers-multisend": "^3.1.0",
     "near-api-js": "^5.0.0",
-<<<<<<< Updated upstream
-    "near-ca": "^0.5.9",
-=======
     "near-ca": "^0.5.10",
->>>>>>> Stashed changes
     "semver": "^7.6.3",
     "viem": "^2.16.5"
   },
