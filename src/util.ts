@@ -1,7 +1,7 @@
 import {
   EthTransactionParams,
   getNetworkId,
-  Network as EvmNetwork,
+  Network,
   SessionRequestParams,
   signatureFromTxHash as sigFromHash,
 } from "near-ca";
@@ -65,7 +65,7 @@ export async function isContract(
 }
 
 export function getClient(chainId: number): PublicClient {
-  return EvmNetwork.fromChainId(chainId).client;
+  return Network.fromChainId(chainId).client;
 }
 
 export function metaTransactionsFromRequest(
