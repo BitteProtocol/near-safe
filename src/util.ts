@@ -1,4 +1,10 @@
-import { EthTransactionParams, Network, SessionRequestParams } from "near-ca";
+import {
+  EthTransactionParams,
+  getNetworkId,
+  Network as EvmNetwork,
+  SessionRequestParams,
+  signatureFromTxHash as sigFromHash,
+} from "near-ca";
 import {
   Address,
   Hex,
@@ -11,6 +17,7 @@ import {
   zeroAddress,
   toBytes,
   keccak256,
+  serializeSignature,
 } from "viem";
 
 import { PaymasterData, MetaTransaction } from "./types";
@@ -59,7 +66,7 @@ export async function isContract(
 }
 
 export function getClient(chainId: number): PublicClient {
-  return Network.fromChainId(chainId).client;
+  return EvmNetwork.fromChainId(chainId).client;
 }
 
 export function metaTransactionsFromRequest(
@@ -93,4 +100,54 @@ export function saltNonceFromMessage(input: string): string {
   // Convert the resulting hash (which is in hex) to a BigInt
   // Return string for readability and transport.
   return BigInt(keccak256(toBytes(input))).toString();
+}
+
+export async function signatureFromTxHash(
+  nearTxHash: string,
+  accountId?: string
+): Promise<Hex> {
+  if (accountId) {
+    const signature = await sigFromHash(
+      `https://archival-rpc.${getNetworkId(accountId)}.near.org`,
+      nearTxHash,
+      accountId
+    );
+    return packSignature(serializeSignature(signature));
+  }
+
+  try {
+    const signature = await raceToFirstResolve(
+      ["testnet", "mainnet"].map((networkId) =>
+        sigFromHash(archiveNode(networkId), nearTxHash)
+      )
+    );
+    return packSignature(serializeSignature(signature));
+  } catch {
+    throw new Error(`No signature found for txHash ${nearTxHash}`);
+  }
+}
+
+const archiveNode = (networkId: string): string =>
+  `https://archival-rpc.${networkId}.near.org`;
+
+export async function raceToFirstResolve<T>(
+  promises: Promise<T>[]
+): Promise<T> {
+  return new Promise((resolve, reject) => {
+    let rejectionCount = 0;
+    const totalPromises = promises.length;
+
+    promises.forEach((promise) => {
+      // Wrap each promise so it only resolves when fulfilled
+      Promise.resolve(promise)
+        .then(resolve) // Resolve when any promise resolves
+        .catch(() => {
+          rejectionCount++;
+          // If all promises reject, reject the race with an error
+          if (rejectionCount === totalPromises) {
+            reject(new Error("All promises rejected"));
+          }
+        });
+    });
+  });
 }

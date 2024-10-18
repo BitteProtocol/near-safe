@@ -10,6 +10,8 @@ import {
   packPaymasterData,
   packSignature,
   saltNonceFromMessage,
+  raceToFirstResolve,
+  signatureFromTxHash,
 } from "../../src/util";
 
 describe("Utility Functions (mostly byte packing)", () => {
@@ -79,6 +81,62 @@ describe("Utility Functions (mostly byte packing)", () => {
   it("saltNonceFromMessage", async () => {
     expect(saltNonceFromMessage("bitte/near-safe")).toBe(
       "26371153660914144112327059280066269158753782528888197421682303285265580464377"
+    );
+  });
+
+  it("raceToFirstResolve (success)", async () => {
+    // Example usage:
+    const promise1 = new Promise((_, reject) =>
+      setTimeout(() => reject(new Error("Reject 1")), 100)
+    );
+    const promise2 = new Promise((_, reject) =>
+      setTimeout(() => reject(new Error("Reject 2")), 200)
+    );
+    const promise3 = new Promise((resolve) =>
+      setTimeout(resolve, 1, "Resolve")
+    );
+
+    await expect(
+      raceToFirstResolve([promise1, promise2, promise3])
+    ).resolves.toBe("Resolve");
+  }, 10);
+  it("raceToFirstResolve (failure)", async () => {
+    const promise1 = new Promise((_, reject) =>
+      setTimeout(() => reject(new Error("Reject 1")), 10)
+    );
+    const promise2 = new Promise((_, reject) =>
+      setTimeout(() => reject(new Error("Reject 2")), 20)
+    );
+    await expect(raceToFirstResolve([promise1, promise2])).rejects.toThrow(
+      "All promises rejected"
+    );
+  });
+
+  it("signatureFromTxHash (mainnet)", async () => {
+    expect(
+      await signatureFromTxHash(
+        "BoKuHRFZ9qZ8gZRCcNS92mQYhEVbHrsUwed6D6CHELhv",
+        "ping-account.near"
+      )
+    ).toBe(
+      "0x000000000000000000000000039ae6baaf4e707ca6d7cfe1fec3f1aa1b4978eb34224b347904b9e957a8dbd720da770464a68e3d1bcef1a4a46c3f9d0a358ccaa01669636f765364a17c03f61b"
+    );
+  });
+
+  it("signatureFromTxHash (testnet)", async () => {
+    expect(
+      await signatureFromTxHash(
+        "BbmJk8W6FNz7cRcFxfVMpBWn9Q9uh99KLkzVyJwmPve8",
+        "neareth-dev.testnet"
+      )
+    ).toBe(
+      "0x000000000000000000000000c69b46c006739fa11f3937556fbf7fc846359547c4927cfbc17eea108e13f5340c200541e90ab5d048087ea0e04f11f715115b362df692bf438b59623c574bc11b"
+    );
+  });
+
+  it("signatureFromTxHash (rejects - doesn't exist)", async () => {
+    await expect(signatureFromTxHash("fart")).rejects.toThrow(
+      "No signature found for txHash fart"
     );
   });
 });
