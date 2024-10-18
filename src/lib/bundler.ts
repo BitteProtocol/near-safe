@@ -29,6 +29,8 @@ type SponsorshipPolicy = { sponsorshipPolicyId: string };
 type BundlerRpcSchema = [
   {
     Method: "pm_sponsorUserOperation";
+    // TODO(bh2smith): Add possiblity to not supply policy:
+    // [UnsignedUserOperation, Address]
     Parameters: [UnsignedUserOperation, Address, SponsorshipPolicy];
     ReturnType: PaymasterData;
   },
