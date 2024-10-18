@@ -22,7 +22,6 @@ import {
 
 import { PaymasterData, MetaTransaction } from "./types";
 
-//
 export const PLACEHOLDER_SIG = encodePacked(["uint48", "uint48"], [0, 0]);
 
 type IntLike = Hex | bigint | string | number;
@@ -102,6 +101,19 @@ export function saltNonceFromMessage(input: string): string {
   return BigInt(keccak256(toBytes(input))).toString();
 }
 
+/**
+ * Fetches the signature for a NEAR transaction hash. If an `accountId` is provided,
+ * it fetches the signature from the appropriate network. Otherwise, it races across
+ * both `testnet` and `mainnet`.
+ *
+ * @param {string} nearTxHash - The NEAR transaction hash for which to fetch the signature.
+ * @param {string} [accountId] - (Optional) The account ID associated with the transaction.
+ * Providing this will reduce dangling promises as the network is determined by the account.
+ *
+ * @returns {Promise<Hex>} A promise that resolves to the hex-encoded signature.
+ *
+ * @throws Will throw an error if no signature is found for the given transaction hash.
+ */
 export async function signatureFromTxHash(
   nearTxHash: string,
   accountId?: string
@@ -127,9 +139,27 @@ export async function signatureFromTxHash(
   }
 }
 
+/**
+ * Utility function to construct an archive node URL for a given NEAR network.
+ *
+ * @param {string} networkId - The ID of the NEAR network (e.g., 'testnet', 'mainnet').
+ *
+ * @returns {string} The full URL of the archival RPC node for the specified network.
+ */
 const archiveNode = (networkId: string): string =>
   `https://archival-rpc.${networkId}.near.org`;
 
+/**
+ * Races an array of promises and resolves with the first promise that fulfills.
+ * If all promises reject, the function will reject with an error.
+ *
+ * @template T
+ * @param {Promise<T>[]} promises - An array of promises to race. Each promise should resolve to type `T`.
+ *
+ * @returns {Promise<T>} A promise that resolves to the value of the first successfully resolved promise.
+ *
+ * @throws Will throw an error if all promises reject with the message "All promises rejected".
+ */
 export async function raceToFirstResolve<T>(
   promises: Promise<T>[]
 ): Promise<T> {
