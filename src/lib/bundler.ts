@@ -24,10 +24,14 @@ function bundlerUrl(chainId: number, apikey: string): string {
   return `https://api.pimlico.io/v2/${chainId}/rpc?apikey=${apikey}`;
 }
 
+type SponsorshipPolicy = { sponsorshipPolicyId: string };
+
 type BundlerRpcSchema = [
   {
     Method: "pm_sponsorUserOperation";
-    Parameters: [UnsignedUserOperation, Address];
+    // TODO(bh2smith): Add possiblity to not supply policy:
+    // [UnsignedUserOperation, Address]
+    Parameters: [UnsignedUserOperation, Address, SponsorshipPolicy];
     ReturnType: PaymasterData;
   },
   {
@@ -65,11 +69,11 @@ export class Erc4337Bundler {
 
   async getPaymasterData(
     rawUserOp: UnsignedUserOperation,
-    usePaymaster: boolean,
-    safeNotDeployed: boolean
+    safeNotDeployed: boolean,
+    sponsorshipPolicy?: string
   ): Promise<PaymasterData> {
     // TODO: Keep this option out of the bundler
-    if (usePaymaster) {
+    if (sponsorshipPolicy) {
       console.log("Requesting paymaster data...");
       return handleRequest<PaymasterData>(() =>
         this.client.request({
@@ -77,6 +81,7 @@ export class Erc4337Bundler {
           params: [
             { ...rawUserOp, signature: PLACEHOLDER_SIG },
             this.entryPointAddress,
+            { sponsorshipPolicyId: sponsorshipPolicy },
           ],
         })
       );

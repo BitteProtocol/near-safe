@@ -86,7 +86,7 @@ export interface PaymasterData {
  */
 export interface UserOptions {
   /** Whether to use a paymaster for gas fee coverage. */
-  usePaymaster: boolean;
+  sponsorshipPolicy?: string;
   /** The unique nonce used to differentiate multiple Safe setups. */
   safeSaltNonce: string;
   /** The NEAR contract ID for the MPC contract. */
