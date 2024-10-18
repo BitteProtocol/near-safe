@@ -53,13 +53,11 @@ async function main(): Promise<void> {
   // TODO: Evaluate gas cost (in ETH)
   const gasCost = ethers.parseEther("0.01");
   // Whenever not using paymaster, or on value transfer, the Safe must be funded.
-  const sufficientFunded =
-    sponsorshipPolicy ||
-    (await txManager.sufficientlyFunded(
-      chainId,
-      transactions,
-      !!sponsorshipPolicy ? 0n : gasCost
-    ));
+  const sufficientFunded = await txManager.sufficientlyFunded(
+    chainId,
+    transactions,
+    !!sponsorshipPolicy ? 0n : gasCost
+  );
   if (!sufficientFunded) {
     console.warn(
       `Safe ${txManager.address} insufficiently funded to perform this transaction. Exiting...`
