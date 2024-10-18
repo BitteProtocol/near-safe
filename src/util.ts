@@ -106,7 +106,7 @@ export function saltNonceFromMessage(input: string): string {
  * it fetches the signature from the appropriate network. Otherwise, it races across
  * both `testnet` and `mainnet`.
  *
- * @param {string} nearTxHash - The NEAR transaction hash for which to fetch the signature.
+ * @param {string} txHash - The NEAR transaction hash for which to fetch the signature.
  * @param {string} [accountId] - (Optional) The account ID associated with the transaction.
  * Providing this will reduce dangling promises as the network is determined by the account.
  *
@@ -115,13 +115,13 @@ export function saltNonceFromMessage(input: string): string {
  * @throws Will throw an error if no signature is found for the given transaction hash.
  */
 export async function signatureFromTxHash(
-  nearTxHash: string,
+  txHash: string,
   accountId?: string
 ): Promise<Hex> {
   if (accountId) {
     const signature = await sigFromHash(
       `https://archival-rpc.${getNetworkId(accountId)}.near.org`,
-      nearTxHash,
+      txHash,
       accountId
     );
     return packSignature(serializeSignature(signature));
@@ -129,13 +129,13 @@ export async function signatureFromTxHash(
 
   try {
     const signature = await raceToFirstResolve(
-      ["testnet", "mainnet"].map((networkId) =>
-        sigFromHash(archiveNode(networkId), nearTxHash)
+      ["testnet", "mainnet"].map((network) =>
+        sigFromHash(archiveNode(network), txHash)
       )
     );
     return packSignature(serializeSignature(signature));
   } catch {
-    throw new Error(`No signature found for txHash ${nearTxHash}`);
+    throw new Error(`No signature found for txHash ${txHash}`);
   }
 }
 
