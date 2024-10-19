@@ -88,14 +88,14 @@ export class ContractSuite {
 
   async addressForSetup(
     setup: ethers.BytesLike,
-    saltNonce?: string
+    saltNonce: string
   ): Promise<Address> {
     // bytes32 salt = keccak256(abi.encodePacked(keccak256(initializer), saltNonce));
     // cf: https://github.com/safe-global/safe-smart-account/blob/499b17ad0191b575fcadc5cb5b8e3faeae5391ae/contracts/proxies/SafeProxyFactory.sol#L58
     const salt = ethers.keccak256(
       ethers.solidityPacked(
         ["bytes32", "uint256"],
-        [ethers.keccak256(setup), saltNonce || 0]
+        [ethers.keccak256(setup), saltNonce]
       )
     );
 

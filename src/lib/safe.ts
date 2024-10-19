@@ -50,16 +50,15 @@ export class SafeContractSuite {
     this.entryPoint = deployments.entryPoint;
   }
 
-  async addressForSetup(setup: Hex, saltNonce?: string): Promise<Address> {
+  async addressForSetup(setup: Hex, saltNonce: string): Promise<Address> {
     // bytes32 salt = keccak256(abi.encodePacked(keccak256(initializer), saltNonce));
     // cf: https://github.com/safe-global/safe-smart-account/blob/499b17ad0191b575fcadc5cb5b8e3faeae5391ae/contracts/proxies/SafeProxyFactory.sol#L58
     const salt = keccak256(
       encodePacked(
         ["bytes32", "uint256"],
-        [keccak256(setup), BigInt(saltNonce || "0")]
+        [keccak256(setup), BigInt(saltNonce)]
       )
     );
-
     // abi.encodePacked(type(SafeProxy).creationCode, uint256(uint160(_singleton)));
     // cf: https://github.com/safe-global/safe-smart-account/blob/499b17ad0191b575fcadc5cb5b8e3faeae5391ae/contracts/proxies/SafeProxyFactory.sol#L29
     const initCode = encodePacked(
@@ -85,18 +84,18 @@ export class SafeContractSuite {
       abi: this.singleton.abi,
       functionName: "setup",
       args: [
-        owners,
-        1, // We use sign threshold of 1.
-        this.moduleSetup.address,
+        owners, // _owners
+        1, // _threshold
+        this.moduleSetup.address, // to
         encodeFunctionData({
           abi: this.moduleSetup.abi,
           functionName: "enableModules",
           args: [[this.m4337.address]],
-        }),
-        this.m4337.address,
-        zeroAddress,
-        0,
-        zeroAddress,
+        }), // data
+        this.m4337.address, // fallbackHandler
+        zeroAddress, // paymentToken
+        0, // payment
+        zeroAddress, // paymentReceiver
       ],
     });
   }
