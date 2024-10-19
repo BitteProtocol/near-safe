@@ -45,6 +45,7 @@
     "ethers-multisend": "^3.1.0",
     "near-api-js": "^5.0.0",
     "near-ca": "^0.5.10",
+    "permissionless": "^0.2.10",
     "semver": "^7.6.3",
     "viem": "^2.16.5"
   },

@@ -55,12 +55,13 @@ describe("Safe Pack", () => {
   });
 
   it("addressForSetup", async () => {
+    const saltNonce = "1";
     const setup = viemPack.getSetup([zeroAddress]);
     const [eps0, vps0, eps1, vps1] = await Promise.all([
-      ethersPack.addressForSetup(setup),
-      viemPack.addressForSetup(setup),
-      ethersPack.addressForSetup(setup, "1"),
-      viemPack.addressForSetup(setup, "1"),
+      ethersPack.addressForSetup(setup, saltNonce),
+      viemPack.addressForSetup(setup, saltNonce),
+      ethersPack.addressForSetup(setup, saltNonce),
+      viemPack.addressForSetup(setup, saltNonce),
     ]);
     expect(eps0).toEqual(vps0);
     expect(eps1).toEqual(vps1);

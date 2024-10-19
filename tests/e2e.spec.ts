@@ -1,6 +1,6 @@
 import dotenv from "dotenv";
 
-import { NearSafe } from "../src";
+import { DEFAULT_SAFE_SALT_NONCE, NearSafe } from "../src";
 
 dotenv.config();
 describe("Near Safe Requests", () => {
@@ -9,6 +9,7 @@ describe("Near Safe Requests", () => {
       accountId: "neareth-dev.testnet",
       mpcContractId: "v1.signer-prod.testnet",
       pimlicoKey: process.env.PIMLICO_KEY!,
+      safeSaltNonce: DEFAULT_SAFE_SALT_NONCE,
     });
     const irrelevantData = {
       data: "0xbeef",
@@ -23,10 +24,10 @@ describe("Near Safe Requests", () => {
             ...irrelevantData,
           },
         ],
-        usePaymaster: true,
       })
     ).resolves.not.toThrow();
-    // Can't send raw messages to Safe Contracts.
+    // Can't send sponsored raw messages to Safe Contracts.
+    // Because transaction simulation reverts.
     await expect(
       adapter.buildTransaction({
         chainId: 11155111,
@@ -36,7 +37,7 @@ describe("Near Safe Requests", () => {
             ...irrelevantData,
           },
         ],
-        usePaymaster: true,
+        sponsorshipPolicy: "sp_clear_vampiro",
       })
     ).rejects.toThrow();
   });
