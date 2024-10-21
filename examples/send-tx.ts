@@ -3,7 +3,7 @@ import { ethers } from "ethers";
 import { isAddress } from "viem";
 
 import { loadArgs, loadEnv } from "./cli";
-import { DEFAULT_SAFE_SALT_NONCE, NearSafe } from "../src";
+import { DEFAULT_SAFE_SALT_NONCE, NearSafe, Network } from "../src";
 
 dotenv.config();
 
@@ -31,11 +31,7 @@ async function main(): Promise<void> {
     },
   ];
   // Add Recovery if safe not deployed & recoveryAddress was provided.
-  if (
-    !(await txManager.safeDeployed(chainId)) &&
-    recoveryAddress &&
-    isAddress(recoveryAddress)
-  ) {
+  if (recoveryAddress && isAddress(recoveryAddress)) {
     const recoveryTx = txManager.addOwnerTx(recoveryAddress);
     // This would happen (sequentially) after the userTx, but all executed in a single
     transactions.push(recoveryTx);
@@ -75,8 +71,10 @@ async function main(): Promise<void> {
   });
   console.log("userOpHash:", userOpHash);
 
-  const userOpReceipt = await txManager.getOpReceipt(chainId, userOpHash);
-  console.log("userOpReceipt:", userOpReceipt);
+  const { receipt } = await txManager.getOpReceipt(chainId, userOpHash);
+  console.log(
+    `View Transaction: ${Network.fromChainId(chainId).scanUrl}/tx/${receipt.transactionHash}`
+  );
 }
 
 main().catch((err) => {
