@@ -263,3 +263,36 @@ export interface EncodedTxData {
     request: SignArgs;
   }>;
 }
+
+export interface SponsorshipPoliciesResponse {
+  has_more: boolean;
+  data: SponsorshipPolicyData[];
+}
+
+export interface SponsorshipPolicyData {
+  id: string;
+  policy_name: string;
+  limits: PolicyLimits;
+  start_time: string; // ISO 8601 format string
+  end_time: string; // ISO 8601 format string
+  chain_ids: ChainIds;
+  policy_status: string; // Possibly "active" or other status strings
+  created_at: string; // ISO 8601 format string
+}
+
+export interface PolicyLimits {
+  global: GlobalLimits;
+}
+
+export interface GlobalLimits {
+  user_operation_spending: SpendingLimit;
+}
+
+export interface SpendingLimit {
+  amount: number;
+  currency: string; // Example: "USD"
+}
+
+export interface ChainIds {
+  allowlist: number[]; // Array of chain IDs
+}

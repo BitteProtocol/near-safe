@@ -14,6 +14,8 @@ import {
 import {
   GasPrices,
   PaymasterData,
+  SponsorshipPoliciesResponse,
+  SponsorshipPolicyData,
   UnsignedUserOperation,
   UserOperation,
   UserOperationReceipt,
@@ -126,6 +128,26 @@ export class Erc4337Bundler {
         method: "eth_getUserOperationReceipt",
         params: [userOpHash],
       })
+    );
+  }
+
+  // New method to query sponsorship policies
+  async getSponsorshipPolicies(): Promise<SponsorshipPolicyData[]> {
+    const url = `https://api.pimlico.io/v2/account/sponsorship_policies?apikey=${this.apiKey}`;
+    const allPolocies = await handleRequest<SponsorshipPoliciesResponse>(
+      async () => {
+        const response = await fetch(url);
+
+        if (!response.ok) {
+          throw new Error(
+            `HTTP error! status: ${response.status}: ${response.statusText}`
+          );
+        }
+        return response.json();
+      }
+    );
+    return allPolocies.data.filter((p) =>
+      p.chain_ids.allowlist.includes(this.chainId)
     );
   }
 }

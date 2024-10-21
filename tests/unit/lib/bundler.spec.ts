@@ -13,11 +13,11 @@ describe("Safe Pack", () => {
     );
   });
 
-  it.only("Strips API Key from error message", () => {
+  it("Strips API Key from error message", () => {
     const apiKey = "any-thirty-six-character-long-string";
     const message = (x: string): string => `Unexpected Error
     URL: https://api.pimlico.io/v2/11155111/rpc?apikey=${x}
-    Additional Error Context`;
+    Request body: {"method":"pm_sponsorUserOperation",{"sponsorshipPolicyId":"sp_clear_vampiro"}]}`;
     expect(stripApiKey(new Error(message(apiKey)))).toEqual(message("***"));
 
     expect(stripApiKey(new Error(message("TopSecret")))).toEqual(
