@@ -3,6 +3,7 @@ import {
   concat,
   encodeFunctionData,
   encodePacked,
+  getAddress,
   getCreate2Address,
   Hash,
   Hex,
@@ -177,7 +178,7 @@ export class SafeContractSuite {
           abi: this.m4337.abi,
           functionName: "executeUserOp",
           args: [
-            txData.to,
+            getAddress(txData.to),
             BigInt(txData.value),
             txData.data,
             txData.operation || 0,
