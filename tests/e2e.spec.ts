@@ -52,7 +52,7 @@ describe("Near Safe Requests", () => {
     await expect(adapter.policyForChainId(100)).resolves.not.toThrow();
   });
 
-  it("bundler: encodeEvmTx", async () => {
+  it("adapter: encodeEvmTx", async () => {
     await expect(
       adapter.encodeSignRequest({
         method: "eth_sendTransaction",
