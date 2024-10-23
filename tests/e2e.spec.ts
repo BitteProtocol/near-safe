@@ -51,4 +51,21 @@ describe("Near Safe Requests", () => {
   it("bundler: getSponsorshipPolicy", async () => {
     await expect(adapter.policyForChainId(100)).resolves.not.toThrow();
   });
+
+  it("adapter: encodeEvmTx", async () => {
+    await expect(
+      adapter.encodeSignRequest({
+        method: "eth_sendTransaction",
+        chainId: 11155111,
+        params: [
+          {
+            from: "0x0000000000000000000000000000000000000000",
+            to: "0xD0A1E359811322d97991E03f863a0C30C2cF029C",
+            data: "0xd0e30db0",
+            value: "0x16345785d8a0000",
+          },
+        ],
+      })
+    ).resolves.not.toThrow();
+  });
 });
