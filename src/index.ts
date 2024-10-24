@@ -9,4 +9,6 @@ export {
   SignRequestData,
   populateTx,
   NetworkFields,
+  signatureFromOutcome,
+  signatureFromTxHash,
 } from "near-ca";
