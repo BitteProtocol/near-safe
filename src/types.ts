@@ -250,6 +250,8 @@ export interface DecodedMultisend {
   costEstimate: string;
   /** The list of meta-transactions included in the multisend. */
   transactions: MetaTransaction[];
+  /** Raw Message to sign if no transactions present. */
+  message?: string;
 }
 
 /**
