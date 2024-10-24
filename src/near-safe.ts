@@ -377,35 +377,48 @@ export class NearSafe {
    * Decodes transaction data for a given EVM transaction and extracts relevant details.
    *
    * @param {EvmTransactionData} data - The raw transaction data to be decoded.
-   * @returns {{ chainId: number; costEstimate: string; transactions: MetaTransaction[] }} - An object containing the chain ID, estimated cost, and a list of decoded meta-transactions.
+   * @returns {DecodedMultisend} - An object containing the chain ID, estimated cost, and a list of decoded meta-transactions.
    */
   decodeTxData(data: EvmTransactionData): DecodedMultisend {
-    // TODO: data.data may not always parse to UserOperation. We will have to handle the other cases.
-    const userOp: UserOperation = JSON.parse(data.data);
-    const { callGasLimit, maxFeePerGas, maxPriorityFeePerGas } = userOp;
-    const maxGasPrice = BigInt(maxFeePerGas) + BigInt(maxPriorityFeePerGas);
-    const { args } = decodeFunctionData({
-      abi: this.safePack.m4337.abi,
-      data: userOp.callData,
-    });
+    try {
+      const userOp: UserOperation = JSON.parse(data.data);
+      const { callGasLimit, maxFeePerGas, maxPriorityFeePerGas } = userOp;
+      const maxGasPrice = BigInt(maxFeePerGas) + BigInt(maxPriorityFeePerGas);
+      const { args } = decodeFunctionData({
+        abi: this.safePack.m4337.abi,
+        data: userOp.callData,
+      });
 
-    // Determine if singular or double!
-    const transactions = isMultisendTx(args)
-      ? decodeMulti(args[2] as string)
-      : [
-          {
-            to: args[0],
-            value: args[1],
-            data: args[2],
-            operation: args[3],
-          } as MetaTransaction,
-        ];
-    return {
-      chainId: data.chainId,
-      // This is an upper bound on the gas fees (could be lower)
-      costEstimate: formatEther(BigInt(callGasLimit) * maxGasPrice),
-      transactions,
-    };
+      // Determine if singular or double!
+      const transactions = isMultisendTx(args)
+        ? decodeMulti(args[2] as string)
+        : [
+            {
+              to: args[0],
+              value: args[1],
+              data: args[2],
+              operation: args[3],
+            } as MetaTransaction,
+          ];
+      return {
+        chainId: data.chainId,
+        // This is an upper bound on the gas fees (could be lower)
+        costEstimate: formatEther(BigInt(callGasLimit) * maxGasPrice),
+        transactions,
+      };
+    } catch (error: unknown) {
+      if (error instanceof SyntaxError) {
+        return {
+          chainId: data.chainId,
+          costEstimate: "0",
+          transactions: [],
+          message: data.data,
+        };
+      } else {
+        const message = error instanceof Error ? error.message : String(error);
+        throw new Error(`decodeTxData: Unexpected error - ${message}`);
+      }
+    }
   }
 
   /**
@@ -450,7 +463,8 @@ export class NearSafe {
         const [messageHash, _] = params as PersonalSignParams;
         const message = decodeSafeMessage(messageHash, safeInfo);
         return {
-          evmMessage: message.safeMessageMessage,
+          // TODO(bh2smith) this is a bit of a hack.
+          evmMessage: message.decodedMessage as string,
           payload: toPayload(message.safeMessageHash),
           hash: message.safeMessageHash,
         };
