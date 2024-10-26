@@ -241,7 +241,7 @@ export interface EvmTransactionData {
 /**
  * Represents the decoded details of a multisend transaction.
  */
-export interface DecodedMultisend {
+export interface DecodedTxData {
   /** The chain ID of the network where the multisend transaction is being executed. */
   chainId: number;
   /** The estimated cost of the multisend transaction in Ether.

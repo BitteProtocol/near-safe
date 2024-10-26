@@ -1,4 +1,3 @@
-import { decodeMulti } from "ethers-multisend";
 import { NearConfig } from "near-api-js/lib/near";
 import { FinalExecutionOutcome } from "near-api-js/lib/providers";
 import {
@@ -10,30 +9,16 @@ import {
   toPayload,
   PersonalSignParams,
 } from "near-ca";
-import {
-  Address,
-  decodeFunctionData,
-  formatEther,
-  getAddress,
-  Hash,
-  Hex,
-  serializeSignature,
-  serializeTransaction,
-} from "viem";
+import { Address, Hash, Hex, serializeSignature } from "viem";
 
 import { DEFAULT_SAFE_SALT_NONCE } from "./constants";
 import { Erc4337Bundler } from "./lib/bundler";
-import { encodeMulti, isMultisendTx } from "./lib/multisend";
+import { encodeMulti } from "./lib/multisend";
 import { SafeContractSuite } from "./lib/safe";
+import { decodeSafeMessage } from "./lib/safe-message";
 import {
-  decodeSafeMessage,
-  isTransactionSerializable,
-} from "./lib/safe-message";
-import {
-  DecodedMultisend,
   EncodedSignRequest,
   EncodedTxData,
-  EvmTransactionData,
   MetaTransaction,
   SponsorshipPolicyData,
   UserOperation,
@@ -380,90 +365,6 @@ export class NearSafe {
   }
 
   /**
-   * Decodes transaction data for a given EVM transaction and extracts relevant details.
-   *
-   * @param {EvmTransactionData} data - The raw transaction data to be decoded.
-   * @returns {DecodedMultisend} - An object containing the chain ID, estimated cost, and a list of decoded meta-transactions.
-   */
-  decodeTxData({ data, chainId }: EvmTransactionData): DecodedMultisend {
-    if (isTransactionSerializable(data)) {
-      const serializedTx = serializeTransaction(data);
-      const { gas, maxFeePerGas, maxPriorityFeePerGas, to, chainId } = data;
-      if (!gas || !maxFeePerGas || !maxPriorityFeePerGas) {
-        throw Error(
-          `Insufficient feeData for transaction ${serializedTx}. Please check https://rawtxdecode.in/ for further information.`
-        );
-      }
-      if (!to) {
-        throw Error(
-          `Transaction is missing the 'to' address in ${serializedTx}. Please check https://rawtxdecode.in/ for further information.`
-        );
-      }
-      return {
-        chainId,
-        // This is an upper bound on the gas fees (could be lower)
-        costEstimate: formatEther(gas * (maxFeePerGas + maxPriorityFeePerGas)),
-        transactions: [
-          {
-            to,
-            value: (data.value || 0n).toString(),
-            data: data.data || "0x",
-          },
-        ],
-      };
-    }
-    if (typeof data !== "string") {
-      // EIP712TypedData
-      return {
-        chainId,
-        costEstimate: "0",
-        transactions: [],
-        message: data,
-      };
-    }
-    try {
-      // Stringified UserOperation.
-      const userOp: UserOperation = JSON.parse(data);
-      const { callGasLimit, maxFeePerGas, maxPriorityFeePerGas } = userOp;
-      const maxGasPrice = BigInt(maxFeePerGas) + BigInt(maxPriorityFeePerGas);
-      const { args } = decodeFunctionData({
-        abi: this.safePack.m4337.abi,
-        data: userOp.callData,
-      });
-
-      // Determine if singular or double!
-      const transactions = isMultisendTx(args)
-        ? decodeMulti(args[2] as string)
-        : [
-            {
-              to: args[0],
-              value: args[1],
-              data: args[2],
-              operation: args[3],
-            } as MetaTransaction,
-          ];
-      return {
-        chainId,
-        // This is an upper bound on the gas fees (could be lower)
-        costEstimate: formatEther(BigInt(callGasLimit) * maxGasPrice),
-        transactions,
-      };
-    } catch (error: unknown) {
-      if (error instanceof SyntaxError) {
-        return {
-          chainId,
-          costEstimate: "0",
-          transactions: [],
-          message: data,
-        };
-      } else {
-        const message = error instanceof Error ? error.message : String(error);
-        throw new Error(`decodeTxData: Unexpected error - ${message}`);
-      }
-    }
-  }
-
-  /**
    * Handles routing of signature requests based on the provided method, chain ID, and parameters.
    *
    * @async
@@ -534,11 +435,15 @@ export class NearSafe {
   }
 
   encodeForSafe(from: string): boolean {
-    const fromAddress = getAddress(from);
-    if (![this.address, this.mpcAddress].includes(fromAddress)) {
+    const fromLower = from.toLowerCase();
+    if (
+      ![this.address, this.mpcAddress]
+        .map((t) => t.toLowerCase())
+        .includes(fromLower)
+    ) {
       throw new Error(`Unexpected from address ${from}`);
     }
-    return this.address === fromAddress;
+    return this.address.toLowerCase() === fromLower;
   }
 
   async eoaEncode(request: SignRequestData): Promise<EncodedSignRequest> {
