@@ -52,7 +52,7 @@ describe("Near Safe Requests", () => {
     await expect(adapter.policyForChainId(100)).resolves.not.toThrow();
   });
 
-  it.only("adapter: encodeEvmTx", async () => {
+  it("adapter: encodeEvmTx", async () => {
     await expect(
       adapter.encodeSignRequest({
         method: "eth_sendTransaction",
@@ -79,9 +79,9 @@ describe("Near Safe Requests", () => {
 
     expect(evmData).toStrictEqual({
       chainId: 11155111,
-      // This will also be fixed by: https://github.com/BitteProtocol/near-ca/pull/142
-      hash: "0x",
-      data: typedDataString,
+      hashToSign:
+        "0x5c395ac0d1ccc0727918d636e8faca7eec2758cc9928c8a8d96e4f58aba453c5",
+      evmMessage: typedDataString,
     });
   });
 });
