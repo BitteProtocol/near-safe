@@ -8,13 +8,14 @@ import {
   Hash,
   Hex,
   keccak256,
+  parseAbi,
   PublicClient,
   toHex,
   zeroAddress,
 } from "viem";
 
 import { SAFE_DEPLOYMENTS } from "../_gen/deployments";
-import { USER_OP_IDENTIFIER } from "../constants";
+import { SENTINEL_OWNERS, USER_OP_IDENTIFIER } from "../constants";
 import {
   Deployment,
   GasPrice,
@@ -109,6 +110,20 @@ export class SafeContractSuite {
     });
   }
 
+  async removeOwnerData(
+    chainId: number,
+    safeAddress: Address,
+    owner: Address
+  ): Promise<Hex> {
+    const prevOwner = await this.prevOwner(chainId, safeAddress, owner);
+    return encodeFunctionData({
+      abi: this.singleton.abi,
+      functionName: "removeOwner",
+      // Keep threshold at 1!
+      args: [prevOwner, owner, 1],
+    });
+  }
+
   async getOpHash(
     chainId: number,
     unsignedUserOp: UserOperation
@@ -199,5 +214,26 @@ export class SafeContractSuite {
       args: [address, 0],
     })) as bigint;
     return nonce;
+  }
+
+  async prevOwner(
+    chainId: number,
+    safeAddress: Address,
+    owner: Address
+  ): Promise<Address> {
+    const client = getClient(chainId);
+    const currentOwners = await client.readContract({
+      address: safeAddress,
+      // abi: this.singleton.abi,
+      abi: parseAbi([
+        "function getOwners() public view returns (address[] memory)",
+      ]),
+      functionName: "getOwners",
+    });
+    const ownerIndex = currentOwners.findIndex((t) => t === owner);
+    if (ownerIndex === -1) {
+      throw new Error(`Not a current owner: ${owner}`);
+    }
+    return ownerIndex > 0 ? currentOwners[ownerIndex - 1] : SENTINEL_OWNERS;
   }
 }

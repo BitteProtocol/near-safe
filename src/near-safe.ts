@@ -360,6 +360,24 @@ export class NearSafe {
   }
 
   /**
+   * Creates a meta-transaction for adding a new owner to the Safe contract.
+   *
+   * @param {number} chainId - the chainId to build the transaction for.
+   * @param {Address} address - The address of the new owner to be removed.
+   * @returns {Promise<MetaTransaction>} - A meta-transaction object for adding the new owner.
+   */
+  async removeOwnerTx(
+    chainId: number,
+    address: Address
+  ): Promise<MetaTransaction> {
+    return {
+      to: this.address,
+      value: "0",
+      data: await this.safePack.removeOwnerData(chainId, this.address, address),
+    };
+  }
+
+  /**
    * Creates and returns a new `Erc4337Bundler` instance for the specified chain.
    *
    * @param {number} chainId - The ID of the blockchain network for which the bundler is to be created.
