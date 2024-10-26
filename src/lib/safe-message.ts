@@ -10,6 +10,8 @@ import {
   hashMessage,
   hashTypedData,
   isHex,
+  serializeTransaction,
+  TransactionSerializable,
 } from "viem";
 
 export type DecodedSafeMessage = {
@@ -133,3 +135,15 @@ export function decodeSafeMessage(
 
 // export const isBlindSigningPayload = (obj: EIP712TypedData | string): boolean =>
 //   !isEIP712TypedData(obj) && isHash(obj);
+
+// Cheeky attempt to serialize. return true if successful!
+export function isTransactionSerializable(
+  data: unknown
+): data is TransactionSerializable {
+  try {
+    serializeTransaction(data as TransactionSerializable);
+    return true;
+  } catch (error) {
+    return false;
+  }
+}

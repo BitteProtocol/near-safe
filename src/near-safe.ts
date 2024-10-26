@@ -14,18 +14,24 @@ import {
   Address,
   decodeFunctionData,
   formatEther,
+  getAddress,
   Hash,
   Hex,
   serializeSignature,
+  serializeTransaction,
 } from "viem";
 
 import { DEFAULT_SAFE_SALT_NONCE } from "./constants";
 import { Erc4337Bundler } from "./lib/bundler";
 import { encodeMulti, isMultisendTx } from "./lib/multisend";
 import { SafeContractSuite } from "./lib/safe";
-import { decodeSafeMessage } from "./lib/safe-message";
+import {
+  decodeSafeMessage,
+  isTransactionSerializable,
+} from "./lib/safe-message";
 import {
   DecodedMultisend,
+  EncodedSignRequest,
   EncodedTxData,
   EvmTransactionData,
   MetaTransaction,
@@ -379,9 +385,45 @@ export class NearSafe {
    * @param {EvmTransactionData} data - The raw transaction data to be decoded.
    * @returns {DecodedMultisend} - An object containing the chain ID, estimated cost, and a list of decoded meta-transactions.
    */
-  decodeTxData(data: EvmTransactionData): DecodedMultisend {
+  decodeTxData({ data, chainId }: EvmTransactionData): DecodedMultisend {
+    if (isTransactionSerializable(data)) {
+      const serializedTx = serializeTransaction(data);
+      const { gas, maxFeePerGas, maxPriorityFeePerGas, to, chainId } = data;
+      if (!gas || !maxFeePerGas || !maxPriorityFeePerGas) {
+        throw Error(
+          `Insufficient feeData for transaction ${serializedTx}. Please check https://rawtxdecode.in/ for further information.`
+        );
+      }
+      if (!to) {
+        throw Error(
+          `Transaction is missing the 'to' address in ${serializedTx}. Please check https://rawtxdecode.in/ for further information.`
+        );
+      }
+      return {
+        chainId,
+        // This is an upper bound on the gas fees (could be lower)
+        costEstimate: formatEther(gas * (maxFeePerGas + maxPriorityFeePerGas)),
+        transactions: [
+          {
+            to,
+            value: (data.value || 0n).toString(),
+            data: data.data || "0x",
+          },
+        ],
+      };
+    }
+    if (typeof data !== "string") {
+      // EIP712TypedData
+      return {
+        chainId,
+        costEstimate: "0",
+        transactions: [],
+        message: data,
+      };
+    }
     try {
-      const userOp: UserOperation = JSON.parse(data.data);
+      // Stringified UserOperation.
+      const userOp: UserOperation = JSON.parse(data);
       const { callGasLimit, maxFeePerGas, maxPriorityFeePerGas } = userOp;
       const maxGasPrice = BigInt(maxFeePerGas) + BigInt(maxPriorityFeePerGas);
       const { args } = decodeFunctionData({
@@ -401,7 +443,7 @@ export class NearSafe {
             } as MetaTransaction,
           ];
       return {
-        chainId: data.chainId,
+        chainId,
         // This is an upper bound on the gas fees (could be lower)
         costEstimate: formatEther(BigInt(callGasLimit) * maxGasPrice),
         transactions,
@@ -409,10 +451,10 @@ export class NearSafe {
     } catch (error: unknown) {
       if (error instanceof SyntaxError) {
         return {
-          chainId: data.chainId,
+          chainId,
           costEstimate: "0",
           transactions: [],
-          message: data.data,
+          message: data,
         };
       } else {
         const message = error instanceof Error ? error.message : String(error);
@@ -434,11 +476,7 @@ export class NearSafe {
   async requestRouter(
     { method, chainId, params }: SignRequestData,
     sponsorshipPolicy?: string
-  ): Promise<{
-    evmMessage: string;
-    payload: number[];
-    hash: Hash;
-  }> {
+  ): Promise<EncodedSignRequest> {
     const safeInfo = {
       address: { value: this.address },
       chainId: chainId.toString(),
@@ -451,23 +489,31 @@ export class NearSafe {
       case "eth_signTypedData":
       case "eth_signTypedData_v4":
       case "eth_sign": {
-        const [_, messageOrData] = params as EthSignParams;
-        const message = decodeSafeMessage(messageOrData, safeInfo);
-        return {
-          evmMessage: message.safeMessageMessage,
-          payload: toPayload(message.safeMessageHash),
-          hash: message.safeMessageHash,
-        };
+        const [from, messageOrData] = params as EthSignParams;
+        if (this.encodeForSafe(from)) {
+          const message = decodeSafeMessage(messageOrData, safeInfo);
+          return {
+            evmMessage: message.decodedMessage,
+            payload: toPayload(message.safeMessageHash),
+            hash: message.safeMessageHash,
+          };
+        } else {
+          return this.eoaEncode({ method, chainId, params });
+        }
       }
       case "personal_sign": {
-        const [messageHash, _] = params as PersonalSignParams;
-        const message = decodeSafeMessage(messageHash, safeInfo);
-        return {
-          // TODO(bh2smith) this is a bit of a hack.
-          evmMessage: message.decodedMessage as string,
-          payload: toPayload(message.safeMessageHash),
-          hash: message.safeMessageHash,
-        };
+        const [messageHash, from] = params as PersonalSignParams;
+        if (this.encodeForSafe(from)) {
+          const message = decodeSafeMessage(messageHash, safeInfo);
+          return {
+            // TODO(bh2smith) this is a bit of a hack.
+            evmMessage: message.decodedMessage,
+            payload: toPayload(message.safeMessageHash),
+            hash: message.safeMessageHash,
+          };
+        } else {
+          return this.eoaEncode({ method, chainId, params });
+        }
       }
       case "eth_sendTransaction": {
         const transactions = metaTransactionsFromRequest(params);
@@ -478,12 +524,34 @@ export class NearSafe {
         });
         const opHash = await this.opHash(chainId, userOp);
         return {
-          payload: toPayload(opHash),
           evmMessage: JSON.stringify(userOp),
-          hash: await this.opHash(chainId, userOp),
+          // We don't need both here.
+          payload: toPayload(opHash),
+          hash: opHash,
         };
       }
     }
+  }
+
+  encodeForSafe(from: string): boolean {
+    const fromAddress = getAddress(from);
+    if (![this.address, this.mpcAddress].includes(fromAddress)) {
+      throw new Error(`Unexpected from address ${from}`);
+    }
+    return this.address === fromAddress;
+  }
+
+  async eoaEncode(request: SignRequestData): Promise<EncodedSignRequest> {
+    // TODO: Adapt nearAdapter.encodeSignRequest to return correct details.
+    const { evmMessage, nearPayload } =
+      await this.nearAdapter.encodeSignRequest(request);
+    return {
+      evmMessage,
+      // TODO: This is an ugly inconsistency.
+      payload: nearPayload.actions[0].params.args.request.payload,
+      // TODO. this should be fromPayload()
+      hash: "0x",
+    };
   }
 
   async policyForChainId(chainId: number): Promise<SponsorshipPolicyData[]> {
