@@ -10,7 +10,7 @@ import {
 import { SAFE_DEPLOYMENTS } from "./_gen/deployments";
 import { isMultisendTx } from "./lib/multisend";
 import { isTransactionSerializable } from "./lib/safe-message";
-import { DecodedTxData, EvmTransactionData, UserOperation } from "./types";
+import { DecodedTxData, SafeEncodedSignRequest, UserOperation } from "./types";
 
 /**
  * Decodes transaction data for a given EVM transaction and extracts relevant details.
@@ -19,9 +19,10 @@ import { DecodedTxData, EvmTransactionData, UserOperation } from "./types";
  * @returns {DecodedTxData} - An object containing the chain ID, estimated cost, and a list of decoded meta-transactions.
  */
 export function decodeTxData({
-  data,
+  evmMessage,
   chainId,
-}: EvmTransactionData): DecodedTxData {
+}: SafeEncodedSignRequest): DecodedTxData {
+  const data = evmMessage;
   if (isTransactionSerializable(data)) {
     return decodeTransactionSerializable(chainId, data);
   }

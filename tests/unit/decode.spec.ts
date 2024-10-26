@@ -1,3 +1,4 @@
+import { SafeEncodedSignRequest } from "../../src";
 import {
   // decodeTransactionSerializable,
   decodeTxData,
@@ -21,10 +22,11 @@ describe("decoding functions", () => {
       "\n" +
       "Nonce:\n" +
       "aca09a1c-a800-4d71-98ed-547f7c59370c";
-    const evmData = {
+    const evmData: SafeEncodedSignRequest = {
       chainId,
-      hash: "0xb3a14f9bd21518d7da23dba01ddf7c7ef45795ca1515f1b41b6f3455c862e22d",
-      data: expectedMessage,
+      hashToSign:
+        "0xb3a14f9bd21518d7da23dba01ddf7c7ef45795ca1515f1b41b6f3455c862e22d",
+      evmMessage: expectedMessage,
     };
 
     expect(decodeTxData(evmData)).toStrictEqual({

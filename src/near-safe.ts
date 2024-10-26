@@ -8,6 +8,8 @@ import {
   EthSignParams,
   toPayload,
   PersonalSignParams,
+  requestRouter,
+  EncodedSignRequest,
 } from "near-ca";
 import { Address, Hash, Hex, serializeSignature } from "viem";
 
@@ -17,7 +19,6 @@ import { encodeMulti } from "./lib/multisend";
 import { SafeContractSuite } from "./lib/safe";
 import { decodeSafeMessage } from "./lib/safe-message";
 import {
-  EncodedSignRequest,
   EncodedTxData,
   MetaTransaction,
   SponsorshipPolicyData,
@@ -221,20 +222,20 @@ export class NearSafe {
     signRequest: SignRequestData,
     sponsorshipPolicy?: string
   ): Promise<EncodedTxData> {
-    const { payload, evmMessage, hash } = await this.requestRouter(
+    const { evmMessage, hashToSign } = await this.requestRouter(
       signRequest,
       sponsorshipPolicy
     );
     return {
       nearPayload: await this.nearAdapter.mpcContract.encodeSignatureRequestTx({
         path: this.nearAdapter.derivationPath,
-        payload,
+        payload: toPayload(hashToSign),
         key_version: 0,
       }),
       evmData: {
         chainId: signRequest.chainId,
-        data: evmMessage,
-        hash,
+        evmMessage,
+        hashToSign,
       },
     };
   }
@@ -395,11 +396,10 @@ export class NearSafe {
           const message = decodeSafeMessage(messageOrData, safeInfo);
           return {
             evmMessage: message.decodedMessage,
-            payload: toPayload(message.safeMessageHash),
-            hash: message.safeMessageHash,
+            hashToSign: message.safeMessageHash,
           };
         } else {
-          return this.eoaEncode({ method, chainId, params });
+          return requestRouter({ method, chainId, params });
         }
       }
       case "personal_sign": {
@@ -407,13 +407,11 @@ export class NearSafe {
         if (this.encodeForSafe(from)) {
           const message = decodeSafeMessage(messageHash, safeInfo);
           return {
-            // TODO(bh2smith) this is a bit of a hack.
             evmMessage: message.decodedMessage,
-            payload: toPayload(message.safeMessageHash),
-            hash: message.safeMessageHash,
+            hashToSign: message.safeMessageHash,
           };
         } else {
-          return this.eoaEncode({ method, chainId, params });
+          return this.requestRouter({ method, chainId, params });
         }
       }
       case "eth_sendTransaction": {
@@ -426,9 +424,7 @@ export class NearSafe {
         const opHash = await this.opHash(chainId, userOp);
         return {
           evmMessage: JSON.stringify(userOp),
-          // We don't need both here.
-          payload: toPayload(opHash),
-          hash: opHash,
+          hashToSign: opHash,
         };
       }
     }
@@ -444,19 +440,6 @@ export class NearSafe {
       throw new Error(`Unexpected from address ${from}`);
     }
     return this.address.toLowerCase() === fromLower;
-  }
-
-  async eoaEncode(request: SignRequestData): Promise<EncodedSignRequest> {
-    // TODO: Adapt nearAdapter.encodeSignRequest to return correct details.
-    const { evmMessage, nearPayload } =
-      await this.nearAdapter.encodeSignRequest(request);
-    return {
-      evmMessage,
-      // TODO: This is an ugly inconsistency.
-      payload: nearPayload.actions[0].params.args.request.payload,
-      // TODO. this should be fromPayload()
-      hash: "0x",
-    };
   }
 
   async policyForChainId(chainId: number): Promise<SponsorshipPolicyData[]> {

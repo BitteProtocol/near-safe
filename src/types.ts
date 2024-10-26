@@ -1,5 +1,10 @@
-import { EIP712TypedData, FunctionCallTransaction, SignArgs } from "near-ca";
-import { Address, Hash, Hex, ParseAbi, TransactionSerializable } from "viem";
+import {
+  EIP712TypedData,
+  EncodedSignRequest,
+  FunctionCallTransaction,
+  SignArgs,
+} from "near-ca";
+import { Address, Hex, ParseAbi } from "viem";
 
 /**
  * Represents a collection of Safe contract deployments, each with its own address and ABI.
@@ -227,15 +232,10 @@ export interface MetaTransaction {
 }
 
 /**
- * Represents raw transaction data for an EVM transaction.
+ * Extends EncodedSignRequest to include a chain ID for cross-chain compatibility.
  */
-export interface EvmTransactionData {
-  /** The chain ID of the network where the transaction is being executed. */
+export interface SafeEncodedSignRequest extends EncodedSignRequest {
   chainId: number;
-  /** The raw data of the transaction. */
-  data: EvmMessage;
-  /** The hash of the transaction. */
-  hash: string;
 }
 
 /**
@@ -259,7 +259,7 @@ export interface DecodedTxData {
  */
 export interface EncodedTxData {
   /** The encoded transaction data for the EVM network. */
-  evmData: EvmTransactionData;
+  evmData: SafeEncodedSignRequest;
   /** The encoded payload for a NEAR function call, including the signing arguments. */
   nearPayload: FunctionCallTransaction<{
     request: SignArgs;
@@ -297,14 +297,4 @@ export interface SpendingLimit {
 
 export interface ChainIds {
   allowlist: number[]; // Array of chain IDs
-}
-
-export type EvmMessage = string | EIP712TypedData | TransactionSerializable;
-
-export interface EncodedSignRequest {
-  evmMessage: EvmMessage;
-  // TODO: this should become one field `hashToSign: Hash`
-  //  it is either a UserOpHash or a Transaction Hash (depending on request type)
-  payload: number[];
-  hash: Hash;
 }
