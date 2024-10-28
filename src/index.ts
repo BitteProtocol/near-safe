@@ -2,7 +2,7 @@ export * from "./near-safe";
 export * from "./types";
 export * from "./util";
 export * from "./constants";
-export * from "./decode";
+export { decodeTxData } from "./decode";
 export * from "./lib/safe-message";
 
 export {

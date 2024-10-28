@@ -1,14 +1,13 @@
 import { EIP712TypedData } from "near-ca";
 import { TransactionSerializableEIP1559 } from "viem";
 
-import { SafeEncodedSignRequest, UserOperation } from "../../src";
+import { SafeEncodedSignRequest, UserOperation, decodeTxData } from "../../src";
 import {
   decodeRlpHex,
   decodeTransactionSerializable,
-  decodeTxData,
   decodeTypedData,
   decodeUserOperation,
-} from "../../src/decode";
+} from "../../src/decode/util";
 
 const chainId = 11155111;
 describe("decoding functions", () => {
