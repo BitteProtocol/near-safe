@@ -1,14 +1,10 @@
-import { NearSafe } from "../../src";
+import { SafeEncodedSignRequest } from "../../src";
+import { decodeTxData } from "../../src/decode";
 describe("NearSafe", () => {
   it("decodeTxData (singular)", async () => {
-    const adapter = await NearSafe.create({
-      accountId: "neareth-dev.testnet",
-      mpcContractId: "v1.signer-prod.testnet",
-      pimlicoKey: "dummyKey",
-    });
-    const txData = {
+    const txData: SafeEncodedSignRequest = {
       chainId: 11155111,
-      data: JSON.stringify({
+      evmMessage: JSON.stringify({
         sender: "0x4184cabfD63Da66828dE8486FE20DC015D800BbB",
         nonce: "0xc",
         callData:
@@ -24,9 +20,10 @@ describe("NearSafe", () => {
         paymasterVerificationGasLimit: "0x6c8e",
         paymasterPostOpGasLimit: "0x1",
       }),
-      hash: "0xfcfe9c2a4a5faade2bb5e9e483eece0fee77760db1698a6eb8060d1d33c56377",
+      hashToSign:
+        "0xfcfe9c2a4a5faade2bb5e9e483eece0fee77760db1698a6eb8060d1d33c56377",
     };
-    expect(adapter.decodeTxData(txData)).toStrictEqual({
+    expect(decodeTxData(txData)).toStrictEqual({
       chainId: 11155111,
       costEstimate: "0.019522217711724688",
       transactions: [
@@ -41,14 +38,9 @@ describe("NearSafe", () => {
   });
 
   it("decodeTxData (multi)", async () => {
-    const adapter = await NearSafe.create({
-      accountId: "neareth-dev.testnet",
-      mpcContractId: "v1.signer-prod.testnet",
-      pimlicoKey: "dummyKey",
-    });
-    const txData = {
+    const txData: SafeEncodedSignRequest = {
       chainId: 11155111,
-      data: JSON.stringify({
+      evmMessage: JSON.stringify({
         sender: "0x575a9D13B206EaF9d621c8626252ac32F72c1133",
         nonce: "0x0",
         factory: "0x4e1DCf7AD4e460CfD30791CCC4F9c8a4f820ec67",
@@ -62,10 +54,11 @@ describe("NearSafe", () => {
         callGasLimit: "0x186a0",
         preVerificationGas: "0x186a0",
       }),
-      hash: "0xb931864e6c59e44ad2753ef07dcb2dc98436119be90e69599b19b516175ac7f1",
+      hashToSign:
+        "0xb931864e6c59e44ad2753ef07dcb2dc98436119be90e69599b19b516175ac7f1",
     };
 
-    expect(adapter.decodeTxData(txData)).toStrictEqual({
+    expect(decodeTxData(txData)).toStrictEqual({
       chainId: 11155111,
       costEstimate: "0.0274908419656",
       transactions: [

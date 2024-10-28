@@ -73,6 +73,7 @@ export function metaTransactionsFromRequest(
 ): MetaTransaction[] {
   let transactions: EthTransactionParams[];
   if (isHex(params)) {
+    // TODO: Consider deprecating this route.
     // If RLP hex is given, decode the transaction and build EthTransactionParams
     const tx = parseTransaction(params);
     transactions = [
@@ -84,6 +85,7 @@ export function metaTransactionsFromRequest(
       },
     ];
   } else {
+    // TODO: add type guard here.
     transactions = params as EthTransactionParams[];
   }
   return transactions.map((tx) => ({
@@ -180,4 +182,15 @@ export async function raceToFirstResolve<T>(
         });
     });
   });
+}
+
+export function assertUnique<T>(
+  iterable: Iterable<T>,
+  errorMessage: string = "The collection contains more than one distinct element."
+): void {
+  const uniqueValues = new Set(iterable);
+
+  if (uniqueValues.size > 1) {
+    throw new Error(errorMessage);
+  }
 }

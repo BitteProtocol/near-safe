@@ -1,4 +1,9 @@
-import { FunctionCallTransaction, SignArgs } from "near-ca";
+import {
+  EIP712TypedData,
+  EncodedSignRequest,
+  FunctionCallTransaction,
+  SignArgs,
+} from "near-ca";
 import { Address, Hex, ParseAbi } from "viem";
 
 /**
@@ -60,6 +65,8 @@ export interface UserOperation extends UnsignedUserOperation {
   /** Optional signature for the user operation. */
   signature?: Hex;
 }
+// TODO(bh2smith): deduplicate the GasData fields between UserOperation and PaymasterData
+// {verificationGasLimit, callGasLimit, preVerificationGas}
 
 /**
  * Represents additional paymaster-related data for a user operation.
@@ -227,21 +234,16 @@ export interface MetaTransaction {
 }
 
 /**
- * Represents raw transaction data for an EVM transaction.
+ * Extends EncodedSignRequest to include a chain ID for cross-chain compatibility.
  */
-export interface EvmTransactionData {
-  /** The chain ID of the network where the transaction is being executed. */
+export interface SafeEncodedSignRequest extends EncodedSignRequest {
   chainId: number;
-  /** The raw data of the transaction. */
-  data: string;
-  /** The hash of the transaction. */
-  hash: string;
 }
 
 /**
  * Represents the decoded details of a multisend transaction.
  */
-export interface DecodedMultisend {
+export interface DecodedTxData {
   /** The chain ID of the network where the multisend transaction is being executed. */
   chainId: number;
   /** The estimated cost of the multisend transaction in Ether.
@@ -251,7 +253,7 @@ export interface DecodedMultisend {
   /** The list of meta-transactions included in the multisend. */
   transactions: MetaTransaction[];
   /** Raw Message to sign if no transactions present. */
-  message?: string;
+  message?: string | EIP712TypedData;
 }
 
 /**
@@ -259,7 +261,7 @@ export interface DecodedMultisend {
  */
 export interface EncodedTxData {
   /** The encoded transaction data for the EVM network. */
-  evmData: EvmTransactionData;
+  evmData: SafeEncodedSignRequest;
   /** The encoded payload for a NEAR function call, including the signing arguments. */
   nearPayload: FunctionCallTransaction<{
     request: SignArgs;

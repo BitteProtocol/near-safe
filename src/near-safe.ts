@@ -1,4 +1,3 @@
-import { decodeMulti } from "ethers-multisend";
 import { NearConfig } from "near-api-js/lib/near";
 import { FinalExecutionOutcome } from "near-api-js/lib/providers";
 import {
@@ -9,31 +8,26 @@ import {
   EthSignParams,
   toPayload,
   PersonalSignParams,
+  requestRouter as mpcRequestRouter,
+  EncodedSignRequest,
+  EthTransactionParams,
 } from "near-ca";
-import {
-  Address,
-  decodeFunctionData,
-  formatEther,
-  Hash,
-  Hex,
-  serializeSignature,
-} from "viem";
+import { Address, Hash, Hex, serializeSignature } from "viem";
 
 import { DEFAULT_SAFE_SALT_NONCE } from "./constants";
 import { Erc4337Bundler } from "./lib/bundler";
-import { encodeMulti, isMultisendTx } from "./lib/multisend";
+import { encodeMulti } from "./lib/multisend";
 import { SafeContractSuite } from "./lib/safe";
 import { decodeSafeMessage } from "./lib/safe-message";
 import {
-  DecodedMultisend,
   EncodedTxData,
-  EvmTransactionData,
   MetaTransaction,
   SponsorshipPolicyData,
   UserOperation,
   UserOperationReceipt,
 } from "./types";
 import {
+  assertUnique,
   getClient,
   isContract,
   metaTransactionsFromRequest,
@@ -230,20 +224,20 @@ export class NearSafe {
     signRequest: SignRequestData,
     sponsorshipPolicy?: string
   ): Promise<EncodedTxData> {
-    const { payload, evmMessage, hash } = await this.requestRouter(
+    const { evmMessage, hashToSign } = await this.requestRouter(
       signRequest,
       sponsorshipPolicy
     );
     return {
       nearPayload: await this.nearAdapter.mpcContract.encodeSignatureRequestTx({
         path: this.nearAdapter.derivationPath,
-        payload,
+        payload: toPayload(hashToSign),
         key_version: 0,
       }),
       evmData: {
         chainId: signRequest.chainId,
-        data: evmMessage,
-        hash,
+        evmMessage,
+        hashToSign,
       },
     };
   }
@@ -392,54 +386,6 @@ export class NearSafe {
   }
 
   /**
-   * Decodes transaction data for a given EVM transaction and extracts relevant details.
-   *
-   * @param {EvmTransactionData} data - The raw transaction data to be decoded.
-   * @returns {DecodedMultisend} - An object containing the chain ID, estimated cost, and a list of decoded meta-transactions.
-   */
-  decodeTxData(data: EvmTransactionData): DecodedMultisend {
-    try {
-      const userOp: UserOperation = JSON.parse(data.data);
-      const { callGasLimit, maxFeePerGas, maxPriorityFeePerGas } = userOp;
-      const maxGasPrice = BigInt(maxFeePerGas) + BigInt(maxPriorityFeePerGas);
-      const { args } = decodeFunctionData({
-        abi: this.safePack.m4337.abi,
-        data: userOp.callData,
-      });
-
-      // Determine if singular or double!
-      const transactions = isMultisendTx(args)
-        ? decodeMulti(args[2] as string)
-        : [
-            {
-              to: args[0],
-              value: args[1],
-              data: args[2],
-              operation: args[3],
-            } as MetaTransaction,
-          ];
-      return {
-        chainId: data.chainId,
-        // This is an upper bound on the gas fees (could be lower)
-        costEstimate: formatEther(BigInt(callGasLimit) * maxGasPrice),
-        transactions,
-      };
-    } catch (error: unknown) {
-      if (error instanceof SyntaxError) {
-        return {
-          chainId: data.chainId,
-          costEstimate: "0",
-          transactions: [],
-          message: data.data,
-        };
-      } else {
-        const message = error instanceof Error ? error.message : String(error);
-        throw new Error(`decodeTxData: Unexpected error - ${message}`);
-      }
-    }
-  }
-
-  /**
    * Handles routing of signature requests based on the provided method, chain ID, and parameters.
    *
    * @async
@@ -452,11 +398,31 @@ export class NearSafe {
   async requestRouter(
     { method, chainId, params }: SignRequestData,
     sponsorshipPolicy?: string
-  ): Promise<{
-    evmMessage: string;
-    payload: number[];
-    hash: Hash;
-  }> {
+  ): Promise<EncodedSignRequest> {
+    // Extract `from` based on the method and check uniqueness
+    const fromAddresses = (() => {
+      switch (method) {
+        case "eth_signTypedData":
+        case "eth_signTypedData_v4":
+        case "eth_sign":
+          return [(params as EthSignParams)[0]];
+        case "personal_sign":
+          return [(params as PersonalSignParams)[1]];
+        case "eth_sendTransaction":
+          return (params as EthTransactionParams[]).map((p) => p.from);
+        default:
+          return [];
+      }
+    })();
+
+    // Assert uniqueness
+    assertUnique(fromAddresses);
+
+    // Early return with eoaEncoding if `from` is not the Safe
+    if (!this.encodeForSafe(fromAddresses[0])) {
+      return mpcRequestRouter({ method, chainId, params });
+    }
+
     const safeInfo = {
       address: { value: this.address },
       chainId: chainId.toString(),
@@ -472,23 +438,21 @@ export class NearSafe {
         const [_, messageOrData] = params as EthSignParams;
         const message = decodeSafeMessage(messageOrData, safeInfo);
         return {
-          evmMessage: message.safeMessageMessage,
-          payload: toPayload(message.safeMessageHash),
-          hash: message.safeMessageHash,
+          evmMessage: message.decodedMessage,
+          hashToSign: message.safeMessageHash,
         };
       }
       case "personal_sign": {
         const [messageHash, _] = params as PersonalSignParams;
         const message = decodeSafeMessage(messageHash, safeInfo);
         return {
-          // TODO(bh2smith) this is a bit of a hack.
-          evmMessage: message.decodedMessage as string,
-          payload: toPayload(message.safeMessageHash),
-          hash: message.safeMessageHash,
+          evmMessage: message.decodedMessage,
+          hashToSign: message.safeMessageHash,
         };
       }
       case "eth_sendTransaction": {
-        const transactions = metaTransactionsFromRequest(params);
+        const castParams = params as EthTransactionParams[] | `0x${string}`;
+        const transactions = metaTransactionsFromRequest(castParams);
         const userOp = await this.buildTransaction({
           chainId,
           transactions,
@@ -496,12 +460,23 @@ export class NearSafe {
         });
         const opHash = await this.opHash(chainId, userOp);
         return {
-          payload: toPayload(opHash),
           evmMessage: JSON.stringify(userOp),
-          hash: await this.opHash(chainId, userOp),
+          hashToSign: opHash,
         };
       }
     }
+  }
+
+  encodeForSafe(from: string): boolean {
+    const fromLower = from.toLowerCase();
+    if (
+      ![this.address, this.mpcAddress]
+        .map((t) => t.toLowerCase())
+        .includes(fromLower)
+    ) {
+      throw new Error(`Unexpected from address ${from}`);
+    }
+    return this.address.toLowerCase() === fromLower;
   }
 
   async policyForChainId(chainId: number): Promise<SponsorshipPolicyData[]> {
