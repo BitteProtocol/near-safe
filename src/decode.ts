@@ -48,8 +48,16 @@ export function decodeTxData({
         message: data,
       };
     } else {
-      const message = error instanceof Error ? error.message : String(error);
-      throw new Error(`decodeTxData: Unexpected error - ${message}`);
+      // TODO: This shouldn't happen anymore and can probably be reverted.
+      // We keep it here now, because near-ca might not have adapted its router.
+      console.warn("Failed UserOp Parsing, try TypedData Parsing", error);
+      try {
+        const typedData: EIP712TypedData = JSON.parse(data);
+        return decodeTypedData(chainId, typedData);
+      } catch (error: unknown) {
+        const message = error instanceof Error ? error.message : String(error);
+        throw new Error(`decodeTxData: Unexpected error - ${message}`);
+      }
     }
   }
 }

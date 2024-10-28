@@ -420,6 +420,7 @@ export class NearSafe {
 
     // Early return with eoaEncoding if `from` is not the Safe
     if (!this.encodeForSafe(fromAddresses[0])) {
+      // TODO: near-ca needs to update this for typed data like we did.
       return mpcRequestRouter({ method, chainId, params });
     }
 
@@ -433,7 +434,17 @@ export class NearSafe {
     // We should either confirm they agree or ignore one of the two.
     switch (method) {
       case "eth_signTypedData":
-      case "eth_signTypedData_v4":
+      case "eth_signTypedData_v4": {
+        const [_, typedDataString] = params as EthSignParams;
+        const message = decodeSafeMessage(
+          JSON.parse(typedDataString),
+          safeInfo
+        );
+        return {
+          evmMessage: JSON.parse(typedDataString),
+          hashToSign: message.safeMessageHash,
+        };
+      }
       case "eth_sign": {
         const [_, messageOrData] = params as EthSignParams;
         const message = decodeSafeMessage(messageOrData, safeInfo);
