@@ -8,7 +8,7 @@ import {
   EthSignParams,
   toPayload,
   PersonalSignParams,
-  requestRouter as eoaRequestRouter,
+  requestRouter as mpcRequestRouter,
   EncodedSignRequest,
   EthTransactionParams,
 } from "near-ca";
@@ -402,7 +402,7 @@ export class NearSafe {
 
     // Early return with eoaEncoding if `from` is not the Safe
     if (!this.encodeForSafe(fromAddresses[0])) {
-      return eoaRequestRouter({ method, chainId, params });
+      return mpcRequestRouter({ method, chainId, params });
     }
 
     const safeInfo = {

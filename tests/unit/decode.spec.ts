@@ -67,7 +67,7 @@ describe("decoding functions", () => {
     });
   });
 
-  it("decodeRlpHex", () => {
+  it("decodeTransactionSerializable", () => {
     const tx: TransactionSerializableEIP1559 = {
       chainId: 11155111,
       gas: BigInt("0x1ad80"),
