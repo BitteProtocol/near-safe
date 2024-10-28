@@ -79,7 +79,7 @@ describe("Near Safe Requests", () => {
       params: [adapter.mpcAddress, typedDataString],
     });
 
-    expect(() => decodeTxData({ ...evmData }));
+    expect(() => decodeTxData({ ...evmData })).not.toThrow();
 
     expect(evmData).toStrictEqual({
       chainId: 11155111,
