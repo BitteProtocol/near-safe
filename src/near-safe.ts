@@ -8,8 +8,9 @@ import {
   EthSignParams,
   toPayload,
   PersonalSignParams,
-  requestRouter,
+  requestRouter as eoaRequestRouter,
   EncodedSignRequest,
+  EthTransactionParams,
 } from "near-ca";
 import { Address, Hash, Hex, serializeSignature } from "viem";
 
@@ -26,6 +27,7 @@ import {
   UserOperationReceipt,
 } from "./types";
 import {
+  assertUnique,
   getClient,
   isContract,
   metaTransactionsFromRequest,
@@ -379,6 +381,30 @@ export class NearSafe {
     { method, chainId, params }: SignRequestData,
     sponsorshipPolicy?: string
   ): Promise<EncodedSignRequest> {
+    // Extract `from` based on the method and check uniqueness
+    const fromAddresses = (() => {
+      switch (method) {
+        case "eth_signTypedData":
+        case "eth_signTypedData_v4":
+        case "eth_sign":
+          return [(params as EthSignParams)[0]];
+        case "personal_sign":
+          return [(params as PersonalSignParams)[1]];
+        case "eth_sendTransaction":
+          return (params as EthTransactionParams[]).map((p) => p.from);
+        default:
+          return [];
+      }
+    })();
+
+    // Assert uniqueness
+    assertUnique(fromAddresses);
+
+    // Early return with eoaEncoding if `from` is not the Safe
+    if (!this.encodeForSafe(fromAddresses[0])) {
+      return eoaRequestRouter({ method, chainId, params });
+    }
+
     const safeInfo = {
       address: { value: this.address },
       chainId: chainId.toString(),
@@ -391,31 +417,24 @@ export class NearSafe {
       case "eth_signTypedData":
       case "eth_signTypedData_v4":
       case "eth_sign": {
-        const [from, messageOrData] = params as EthSignParams;
-        if (this.encodeForSafe(from)) {
-          const message = decodeSafeMessage(messageOrData, safeInfo);
-          return {
-            evmMessage: message.decodedMessage,
-            hashToSign: message.safeMessageHash,
-          };
-        } else {
-          return requestRouter({ method, chainId, params });
-        }
+        const [_, messageOrData] = params as EthSignParams;
+        const message = decodeSafeMessage(messageOrData, safeInfo);
+        return {
+          evmMessage: message.decodedMessage,
+          hashToSign: message.safeMessageHash,
+        };
       }
       case "personal_sign": {
-        const [messageHash, from] = params as PersonalSignParams;
-        if (this.encodeForSafe(from)) {
-          const message = decodeSafeMessage(messageHash, safeInfo);
-          return {
-            evmMessage: message.decodedMessage,
-            hashToSign: message.safeMessageHash,
-          };
-        } else {
-          return this.requestRouter({ method, chainId, params });
-        }
+        const [messageHash, _] = params as PersonalSignParams;
+        const message = decodeSafeMessage(messageHash, safeInfo);
+        return {
+          evmMessage: message.decodedMessage,
+          hashToSign: message.safeMessageHash,
+        };
       }
       case "eth_sendTransaction": {
-        const transactions = metaTransactionsFromRequest(params);
+        const castParams = params as EthTransactionParams[] | `0x${string}`;
+        const transactions = metaTransactionsFromRequest(castParams);
         const userOp = await this.buildTransaction({
           chainId,
           transactions,

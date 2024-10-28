@@ -3,13 +3,15 @@ import { EIP712TypedData } from "near-ca";
 import {
   decodeFunctionData,
   formatEther,
+  Hex,
+  parseTransaction,
   serializeTransaction,
   TransactionSerializable,
 } from "viem";
 
 import { SAFE_DEPLOYMENTS } from "./_gen/deployments";
 import { isMultisendTx } from "./lib/multisend";
-import { isTransactionSerializable } from "./lib/safe-message";
+import { isRlpHex, isTransactionSerializable } from "./lib/safe-message";
 import { DecodedTxData, SafeEncodedSignRequest, UserOperation } from "./types";
 
 /**
@@ -23,6 +25,9 @@ export function decodeTxData({
   chainId,
 }: SafeEncodedSignRequest): DecodedTxData {
   const data = evmMessage;
+  if (isRlpHex(evmMessage)) {
+    decodeRlpHex(chainId, evmMessage);
+  }
   if (isTransactionSerializable(data)) {
     return decodeTransactionSerializable(chainId, data);
   }
@@ -79,6 +84,10 @@ export function decodeTransactionSerializable(
       },
     ],
   };
+}
+
+export function decodeRlpHex(chainId: number, tx: Hex): DecodedTxData {
+  return decodeTransactionSerializable(chainId, parseTransaction(tx));
 }
 
 export function decodeTypedData(

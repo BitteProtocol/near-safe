@@ -183,3 +183,14 @@ export async function raceToFirstResolve<T>(
     });
   });
 }
+
+export function assertUnique<T>(
+  iterable: Iterable<T>,
+  errorMessage: string = "The collection contains more than one distinct element."
+): void {
+  const uniqueValues = new Set(iterable);
+
+  if (uniqueValues.size > 1) {
+    throw new Error(errorMessage);
+  }
+}

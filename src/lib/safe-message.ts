@@ -9,7 +9,9 @@ import {
   Hash,
   hashMessage,
   hashTypedData,
+  Hex,
   isHex,
+  parseTransaction,
   serializeTransaction,
   TransactionSerializable,
 } from "viem";
@@ -142,6 +144,15 @@ export function isTransactionSerializable(
 ): data is TransactionSerializable {
   try {
     serializeTransaction(data as TransactionSerializable);
+    return true;
+  } catch (error) {
+    return false;
+  }
+}
+
+export function isRlpHex(data: unknown): data is Hex {
+  try {
+    parseTransaction(data as Hex);
     return true;
   } catch (error) {
     return false;
