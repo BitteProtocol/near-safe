@@ -57,7 +57,7 @@ export function encodeMulti(
     data: encodeFunctionData({
       abi: parseAbi(MULTI_SEND_ABI),
       functionName: "multiSend",
-      args: [encodedTransactions],
+      args: [encodedTransactions as Hex],
     }),
   };
 }
@@ -74,7 +74,7 @@ export function isMultisendTx(args: readonly unknown[]): boolean {
 // import { getAddress } from '@ethersproject/address';
 // import { BigNumber } from '@ethersproject/bignumber';
 function unpack(
-  packed: Hex,
+  packed: string,
   startIndex: number
 ): {
   operation: number;
@@ -118,10 +118,10 @@ export function decodeMultiViem(data: Hex): MetaTransaction[] {
   // });
 
   const tx = decodeFunctionData({
-    abi: MULTI_SEND_ABI,
+    abi: parseAbi(MULTI_SEND_ABI),
     data,
   });
-  const [transactionsEncoded] = tx.args as [Hex];
+  const [transactionsEncoded] = tx.args as [string];
   const result = [];
   let startIndex = 2; // skip over 0x
   while (startIndex < transactionsEncoded.length) {
