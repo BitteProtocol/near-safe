@@ -26,7 +26,7 @@ export function decodeTxData({
 }: Omit<SafeEncodedSignRequest, "hashToSign">): DecodedTxData {
   const data = evmMessage;
   if (isRlpHex(evmMessage)) {
-    decodeRlpHex(chainId, evmMessage);
+    return decodeRlpHex(chainId, evmMessage);
   }
   if (isTransactionSerializable(data)) {
     return decodeTransactionSerializable(chainId, data);

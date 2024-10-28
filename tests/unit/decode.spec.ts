@@ -48,6 +48,24 @@ describe("decoding functions", () => {
     //   hash: "0xb3a14f9bd21518d7da23dba01ddf7c7ef45795ca1515f1b41b6f3455c862e22d",
     //   data: expectedMessage,
     // });
+
+    expect(
+      decodeTxData({
+        chainId: 11155111,
+        evmMessage:
+          "0x02ef83aa36a780830f4d5b84350f1b6a82520894d8b91431c9fa6dcf3a8cdc2dda68904524a65726865af3107a400080c0",
+      })
+    ).toStrictEqual({
+      chainId: 11155111,
+      costEstimate: "0.000018714892329",
+      transactions: [
+        {
+          to: "0xd8b91431c9fa6dcf3a8cdc2dda68904524a65726",
+          value: "100000000000000",
+          data: "0x",
+        },
+      ],
+    });
   });
 
   it("decodeRlpHex", () => {
