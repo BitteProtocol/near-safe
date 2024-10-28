@@ -12,7 +12,7 @@ import {
   EncodedSignRequest,
   EthTransactionParams,
 } from "near-ca";
-import { Address, Hash, Hex, serializeSignature } from "viem";
+import { Address, Hash, Hex, serializeSignature, zeroAddress } from "viem";
 
 import { DEFAULT_SAFE_SALT_NONCE } from "./constants";
 import { Erc4337Bundler } from "./lib/bundler";
@@ -479,15 +479,15 @@ export class NearSafe {
   }
 
   encodeForSafe(from: string): boolean {
-    const fromLower = from.toLowerCase();
-    if (
-      ![this.address, this.mpcAddress]
-        .map((t) => t.toLowerCase())
-        .includes(fromLower)
-    ) {
+    const lowerFrom = from.toLowerCase();
+    const lowerZero = zeroAddress.toLowerCase();
+    const lowerSafe = this.address.toLowerCase();
+    const lowerMpc = this.mpcAddress.toLowerCase();
+    // We allow zeroAddress (and and treat is as from = safe)
+    if (![lowerSafe, lowerMpc, lowerZero].includes(lowerFrom)) {
       throw new Error(`Unexpected from address ${from}`);
     }
-    return this.address.toLowerCase() === fromLower;
+    return [this.address.toLowerCase(), lowerZero].includes(lowerFrom);
   }
 
   async policyForChainId(chainId: number): Promise<SponsorshipPolicyData[]> {

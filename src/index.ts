@@ -3,6 +3,7 @@ export * from "./types";
 export * from "./util";
 export * from "./constants";
 export * from "./decode";
+export * from "./lib/safe-message";
 
 export {
   Network,
@@ -13,4 +14,5 @@ export {
   signatureFromOutcome,
   signatureFromTxHash,
   requestRouter as mpcRequestRouter,
+  EthTransactionParams,
 } from "near-ca";
