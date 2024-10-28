@@ -2,6 +2,7 @@ import dotenv from "dotenv";
 import { isHex } from "viem";
 
 import { DEFAULT_SAFE_SALT_NONCE, NearSafe } from "../src";
+import { decodeTxData } from "../src/decode";
 
 dotenv.config();
 
@@ -53,7 +54,7 @@ describe("Near Safe Requests", () => {
     await expect(adapter.policyForChainId(100)).resolves.not.toThrow();
   });
 
-  it("adapter: encodeEvmTx", async () => {
+  it.only("adapter: encodeEvmTx", async () => {
     await expect(
       adapter.encodeSignRequest({
         method: "eth_sendTransaction",
@@ -77,6 +78,8 @@ describe("Near Safe Requests", () => {
       method: "eth_signTypedData_v4",
       params: [adapter.mpcAddress, typedDataString],
     });
+
+    expect(() => decodeTxData({ ...evmData })).not.toThrow();
 
     expect(evmData).toStrictEqual({
       chainId: 11155111,
