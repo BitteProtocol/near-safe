@@ -1,4 +1,4 @@
-import { decodeMulti, MetaTransaction } from "ethers-multisend";
+import { decodeMulti } from "ethers-multisend/build/cjs/decodeMulti";
 import { EIP712TypedData } from "near-ca";
 import {
   decodeFunctionData,
@@ -74,7 +74,7 @@ export function decodeUserOperation(
 
   // Determine if singular or double!
   const transactions = isMultisendTx(args)
-    ? decodeMulti(args[2] as string)
+    ? decodeMulti(args[2] as Hex)
     : [
         {
           to: args[0],
@@ -89,4 +89,15 @@ export function decodeUserOperation(
     costEstimate: formatEther(BigInt(callGasLimit) * maxGasPrice),
     transactions,
   };
+}
+
+export declare enum OperationType {
+  Call = 0,
+  DelegateCall = 1,
+}
+export interface MetaTransaction {
+  readonly to: string;
+  readonly value: string;
+  readonly data: string;
+  readonly operation?: OperationType;
 }
