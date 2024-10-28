@@ -2,6 +2,7 @@ export * from "./near-safe";
 export * from "./types";
 export * from "./util";
 export * from "./constants";
+export * from "./decode";
 
 export {
   Network,
@@ -11,4 +12,5 @@ export {
   NetworkFields,
   signatureFromOutcome,
   signatureFromTxHash,
+  requestRouter as mpcRequestRouter,
 } from "near-ca";
