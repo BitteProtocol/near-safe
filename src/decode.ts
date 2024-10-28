@@ -23,7 +23,7 @@ import { DecodedTxData, SafeEncodedSignRequest, UserOperation } from "./types";
 export function decodeTxData({
   evmMessage,
   chainId,
-}: SafeEncodedSignRequest): DecodedTxData {
+}: Omit<SafeEncodedSignRequest, "hashToSign">): DecodedTxData {
   const data = evmMessage;
   if (isRlpHex(evmMessage)) {
     decodeRlpHex(chainId, evmMessage);
