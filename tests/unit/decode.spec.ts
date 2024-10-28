@@ -64,9 +64,13 @@ describe("decoding functions", () => {
         },
       ],
     });
-    const minimalRlpHex =
-      "0x02ef83aa36a780830f4d5b84350f1b6a82520894d8b91431c9fa6dcf3a8cdc2dda68904524a65726865af3107a400080c0";
-    expect(decodeRlpHex(11155111, minimalRlpHex)).toStrictEqual({
+
+    expect(
+      decodeRlpHex(
+        11155111,
+        "0x02ef83aa36a780830f4d5b84350f1b6a82520894d8b91431c9fa6dcf3a8cdc2dda68904524a65726865af3107a400080c0"
+      )
+    ).toStrictEqual({
       chainId: 11155111,
       costEstimate: "0.000018714892329",
       transactions: [
