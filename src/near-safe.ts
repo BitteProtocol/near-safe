@@ -1,9 +1,7 @@
 import { NearConfig } from "near-api-js/lib/near";
-import { FinalExecutionOutcome } from "near-api-js/lib/providers";
 import {
   NearEthAdapter,
   setupAdapter,
-  signatureFromOutcome,
   SignRequestData,
   EthSignParams,
   toPayload,
@@ -12,7 +10,7 @@ import {
   EncodedSignRequest,
   EthTransactionParams,
 } from "near-ca";
-import { Address, Hash, Hex, serializeSignature, zeroAddress } from "viem";
+import { Address, Hash, Hex, zeroAddress } from "viem";
 
 import { DEFAULT_SAFE_SALT_NONCE } from "./constants";
 import { Erc4337Bundler } from "./lib/bundler";
@@ -247,30 +245,24 @@ export class NearSafe {
    * Warning: Uses a private ethRPC with sensitive Pimlico API key (should be run server side).
    *
    * @param {number} chainId - The ID of the EVM network to which the transaction should be broadcasted.
-   * @param {FinalExecutionOutcome} outcome - The result of the NEAR transaction execution, which contains the necessary data to construct an EVM signature.
+   * @param {Signature} signature - The valid signature of the unsignedUserOp.
    * @param {UserOperation} unsignedUserOp - The unsigned user operation to be broadcasted. This includes transaction data such as the destination address and data payload.
-   * @returns {Promise<{ signature: Hex; opHash: Hash }>} - A promise that resolves to an object containing the signature used and the hash of the executed user operation.
+   * @returns {Promise<Hash>} - A promise that resolves hash of the executed user operation.
    * @throws {Error} - Throws an error if the EVM broadcast fails, including the error message for debugging.
    */
-  async broadcastEvm(
+  async broadcastBundler(
     chainId: number,
-    outcome: FinalExecutionOutcome,
+    signatureHex: Hex,
     unsignedUserOp: UserOperation
-  ): Promise<{ signature: Hex; opHash: Hash }> {
-    const signature = packSignature(
-      serializeSignature(signatureFromOutcome(outcome))
-    );
+  ): Promise<Hash> {
     try {
-      return {
-        signature,
-        opHash: await this.executeTransaction(chainId, {
-          ...unsignedUserOp,
-          signature,
-        }),
-      };
+      return this.executeTransaction(chainId, {
+        ...unsignedUserOp,
+        signature: packSignature(signatureHex),
+      });
     } catch (error: unknown) {
       throw new Error(
-        `Failed EVM broadcast: ${error instanceof Error ? error.message : String(error)}`
+        `Failed Bundler broadcast: ${error instanceof Error ? error.message : String(error)}`
       );
     }
   }
