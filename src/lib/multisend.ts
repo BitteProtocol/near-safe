@@ -70,9 +70,6 @@ export function isMultisendTx(args: readonly unknown[]): boolean {
   );
 }
 
-// import { Interface } from '@ethersproject/abi';
-// import { getAddress } from '@ethersproject/address';
-// import { BigNumber } from '@ethersproject/bignumber';
 function unpack(
   packed: string,
   startIndex: number
@@ -108,15 +105,8 @@ function unpack(
     endIndex,
   };
 }
-export function decodeMultiViem(data: Hex): MetaTransaction[] {
-  // const multiSendContract = new Interface(MULTI_SEND_ABI);
-  // const tx = multiSendContract.parseTransaction({ data });
-  // const multiSendAbiItem = parseAbiItem({
-  //   type: "function",
-  //   name: "multiSend",
-  //   inputs: [{ name: "data", type: "bytes" }],
-  // });
 
+export function decodeMulti(data: Hex): MetaTransaction[] {
   const tx = decodeFunctionData({
     abi: parseAbi(MULTI_SEND_ABI),
     data,

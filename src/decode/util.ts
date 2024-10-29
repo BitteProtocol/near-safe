@@ -1,4 +1,3 @@
-import { decodeMulti } from "ethers-multisend/build/cjs/decodeMulti";
 import { EIP712TypedData } from "near-ca";
 import {
   decodeFunctionData,
@@ -10,7 +9,7 @@ import {
 } from "viem";
 
 import { SAFE_DEPLOYMENTS } from "../_gen/deployments";
-import { isMultisendTx } from "../lib/multisend";
+import { decodeMulti, isMultisendTx } from "../lib/multisend";
 import { DecodedTxData, UserOperation } from "../types";
 
 export function decodeTransactionSerializable(

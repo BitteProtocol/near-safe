@@ -1,8 +1,11 @@
-import { decodeMulti } from "ethers-multisend";
+import { decodeMulti as decodeMultiEthers } from "ethers-multisend";
 import { encodeFunctionData, erc20Abi, Hex, parseUnits, toHex } from "viem";
 
 import { OperationType } from "../../../src";
-import { decodeMultiViem, encodeMulti } from "../../../src/lib/multisend";
+import {
+  decodeMulti as decodeMultiViem,
+  encodeMulti,
+} from "../../../src/lib/multisend";
 
 describe("Multisend", () => {
   it("encodeMulti", () => {
@@ -46,6 +49,7 @@ describe("Multisend", () => {
     const input = encodeMulti([tx1, tx2, tx3]);
 
     expect(decodeMultiViem(input.data as Hex)).toStrictEqual([tx1, tx2, tx3]);
+
     // TODO: differening by even length hex string: "0x01" vs "0x1"
     // expect(decodeMultiViem(input.data as Hex)).toStrictEqual(
     //   decodeMulti(input.data)
@@ -75,7 +79,7 @@ describe("Multisend", () => {
       },
     ];
     const multiSendTx = encodeMulti(input);
-    const result = decodeMulti(multiSendTx.data);
+    const result = decodeMultiEthers(multiSendTx.data);
     expect(result).toStrictEqual(input);
   });
 });
