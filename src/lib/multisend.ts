@@ -1,10 +1,13 @@
 import {
   Address,
+  decodeFunctionData,
   encodeFunctionData,
   encodePacked,
+  getAddress,
   Hex,
   parseAbi,
   size,
+  toHex,
 } from "viem";
 
 import { MetaTransaction, OperationType } from "../types";
@@ -54,7 +57,7 @@ export function encodeMulti(
     data: encodeFunctionData({
       abi: parseAbi(MULTI_SEND_ABI),
       functionName: "multiSend",
-      args: [encodedTransactions],
+      args: [encodedTransactions as Hex],
     }),
   };
 }
@@ -65,4 +68,56 @@ export function isMultisendTx(args: readonly unknown[]): boolean {
     to === MULTISEND_141.toLowerCase() ||
     to === MULTISEND_CALLONLY_141.toLowerCase()
   );
+}
+
+function unpack(
+  packed: string,
+  startIndex: number
+): {
+  operation: number;
+  to: string;
+  value: string;
+  data: string;
+  endIndex: number;
+} {
+  // read operation from first 8 bits (= 2 hex digits)
+  const operation = parseInt(packed.substring(startIndex, startIndex + 2), 16);
+  // the next 40 characters are the to address
+  const to = getAddress(
+    `0x${packed.substring(startIndex + 2, startIndex + 42)}`
+  );
+  // then comes the uint256 value (= 64 hex digits)
+  const value = toHex(
+    BigInt(`0x${packed.substring(startIndex + 42, startIndex + 106)}`)
+  );
+  // and the uint256 data length (= 64 hex digits)
+  const hexDataLength = parseInt(
+    packed.substring(startIndex + 106, startIndex + 170),
+    16
+  );
+  const endIndex = startIndex + 170 + hexDataLength * 2; // * 2 because each hex item is represented with 2 digits
+  const data = `0x${packed.substring(startIndex + 170, endIndex)}`;
+  return {
+    operation,
+    to,
+    value,
+    data,
+    endIndex,
+  };
+}
+
+export function decodeMulti(data: Hex): MetaTransaction[] {
+  const tx = decodeFunctionData({
+    abi: parseAbi(MULTI_SEND_ABI),
+    data,
+  });
+  const [transactionsEncoded] = tx.args as [string];
+  const result = [];
+  let startIndex = 2; // skip over 0x
+  while (startIndex < transactionsEncoded.length) {
+    const { endIndex, ...tx } = unpack(transactionsEncoded, startIndex);
+    result.push(tx);
+    startIndex = endIndex;
+  }
+  return result;
 }
