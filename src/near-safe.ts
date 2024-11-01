@@ -1,4 +1,3 @@
-import { NearConfig } from "near-api-js/lib/near";
 import {
   NearEthAdapter,
   setupAdapter,
@@ -9,6 +8,7 @@ import {
   requestRouter as mpcRequestRouter,
   EncodedSignRequest,
   EthTransactionParams,
+  SetupConfig as MpcConfig,
 } from "near-ca";
 import { Address, Hash, Hex, zeroAddress } from "viem";
 
@@ -33,11 +33,7 @@ import {
 } from "./util";
 
 export interface NearSafeConfig {
-  // Adapter Config:
-  accountId: string;
-  mpcContractId: string;
-  nearConfig?: NearConfig;
-  privateKey?: string;
+  mpc: MpcConfig;
   // Safe Config:
   pimlicoKey: string;
   safeSaltNonce?: string;
@@ -63,7 +59,7 @@ export class NearSafe {
     const safeSaltNonce = config.safeSaltNonce || DEFAULT_SAFE_SALT_NONCE;
 
     // const nearAdapter = await mockAdapter();
-    const nearAdapter = await setupAdapter({ ...config });
+    const nearAdapter = await setupAdapter(config.mpc);
     const safePack = new SafeContractSuite();
 
     const setup = safePack.getSetup([nearAdapter.address]);

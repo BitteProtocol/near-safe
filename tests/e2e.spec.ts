@@ -11,8 +11,10 @@ describe("Near Safe Requests", () => {
   beforeAll(async () => {
     // Initialize the NearSafe adapter once before all tests
     adapter = await NearSafe.create({
-      accountId: "neareth-dev.testnet",
-      mpcContractId: "v1.signer-prod.testnet",
+      mpc: {
+        accountId: "neareth-dev.testnet",
+        mpcContractId: "v1.signer-prod.testnet",
+      },
       pimlicoKey: process.env.PIMLICO_KEY!,
       safeSaltNonce: DEFAULT_SAFE_SALT_NONCE,
     });
