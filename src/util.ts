@@ -18,8 +18,11 @@ import {
   toBytes,
   keccak256,
   serializeSignature,
+  createPublicClient,
+  http,
 } from "viem";
 
+import { DEFAULT_SETUP_RPC } from "./constants";
 import { PaymasterData, MetaTransaction } from "./types";
 
 export const PLACEHOLDER_SIG = encodePacked(["uint48", "uint48"], [0, 0]);
@@ -65,6 +68,10 @@ export async function isContract(
 }
 
 export function getClient(chainId: number): PublicClient {
+  // TODO(bh2smith)
+  if (chainId === 11155111) {
+    return createPublicClient({ transport: http(DEFAULT_SETUP_RPC) });
+  }
   return Network.fromChainId(chainId).client;
 }
 

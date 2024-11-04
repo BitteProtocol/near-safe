@@ -1,12 +1,14 @@
 import {
   Address,
   concat,
+  createPublicClient,
   encodeFunctionData,
   encodePacked,
   getAddress,
   getCreate2Address,
   Hash,
   Hex,
+  http,
   keccak256,
   parseAbi,
   PublicClient,
@@ -15,7 +17,11 @@ import {
 } from "viem";
 
 import { SAFE_DEPLOYMENTS } from "../_gen/deployments";
-import { SENTINEL_OWNERS, USER_OP_IDENTIFIER } from "../constants";
+import {
+  DEFAULT_SETUP_RPC,
+  SENTINEL_OWNERS,
+  USER_OP_IDENTIFIER,
+} from "../constants";
 import {
   Deployment,
   GasPrice,
@@ -35,15 +41,15 @@ import {
  */
 export class SafeContractSuite {
   // Used only for stateless contract reads.
-  dummyClient: PublicClient;
+  setupClient: PublicClient;
   singleton: Deployment;
   proxyFactory: Deployment;
   m4337: Deployment;
   moduleSetup: Deployment;
   entryPoint: Deployment;
 
-  constructor() {
-    this.dummyClient = getClient(11155111);
+  constructor(rpcUrl: string = DEFAULT_SETUP_RPC) {
+    this.setupClient = createPublicClient({ transport: http(rpcUrl) });
     const deployments = SAFE_DEPLOYMENTS;
     this.singleton = deployments.singleton;
     this.proxyFactory = deployments.proxyFactory;
@@ -66,7 +72,7 @@ export class SafeContractSuite {
     const initCode = encodePacked(
       ["bytes", "uint256"],
       [
-        (await this.dummyClient.readContract({
+        (await this.setupClient.readContract({
           address: this.proxyFactory.address,
           abi: this.proxyFactory.abi,
           functionName: "proxyCreationCode",

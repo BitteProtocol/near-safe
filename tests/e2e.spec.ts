@@ -80,7 +80,7 @@ describe("Near Safe Requests", () => {
       method: "eth_signTypedData_v4",
       params: [adapter.mpcAddress, typedDataString],
     });
-
+    console.log(evmData);
     expect(() => decodeTxData({ ...evmData })).not.toThrow();
 
     expect(evmData).toStrictEqual({

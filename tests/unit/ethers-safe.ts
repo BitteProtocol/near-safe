@@ -9,6 +9,7 @@ import {
 import { ethers } from "ethers";
 import { Address, Hash, Hex } from "viem";
 
+import { DEFAULT_SETUP_RPC } from "../../src";
 import {
   GasPrice,
   MetaTransaction,
@@ -46,7 +47,7 @@ export class ContractSuite {
 
   static async init(): Promise<ContractSuite> {
     // TODO - this is a cheeky hack.
-    const provider = new ethers.JsonRpcProvider("https://rpc2.sepolia.org");
+    const provider = new ethers.JsonRpcProvider(DEFAULT_SETUP_RPC);
     const safeDeployment = (fn: DeploymentFunction): Promise<ethers.Contract> =>
       getDeployment(fn, { provider, version: "1.4.1" });
     const m4337Deployment = async (
