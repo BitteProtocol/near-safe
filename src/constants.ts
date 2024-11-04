@@ -7,3 +7,5 @@ export const USER_OP_IDENTIFIER = toHex(DOMAIN_SEPARATOR, { size: 16 });
 export const DEFAULT_SAFE_SALT_NONCE = BigInt(USER_OP_IDENTIFIER).toString();
 
 export const SENTINEL_OWNERS = "0x0000000000000000000000000000000000000001";
+
+export const DEFAULT_SETUP_RPC = "https://ethereum-sepolia-rpc.publicnode.com";

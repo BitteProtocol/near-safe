@@ -37,6 +37,7 @@ export interface NearSafeConfig {
   // Safe Config:
   pimlicoKey: string;
   safeSaltNonce?: string;
+  setupRpc?: string;
 }
 
 export class NearSafe {
@@ -55,12 +56,12 @@ export class NearSafe {
    * @returns {Promise<NearSafe>} - A promise that resolves to a new `NearSafe` instance.
    */
   static async create(config: NearSafeConfig): Promise<NearSafe> {
-    const { pimlicoKey } = config;
+    const { pimlicoKey, setupRpc } = config;
     const safeSaltNonce = config.safeSaltNonce || DEFAULT_SAFE_SALT_NONCE;
 
     // const nearAdapter = await mockAdapter();
     const nearAdapter = await setupAdapter(config.mpc);
-    const safePack = new SafeContractSuite();
+    const safePack = new SafeContractSuite(setupRpc);
 
     const setup = safePack.getSetup([nearAdapter.address]);
     const safeAddress = await safePack.addressForSetup(setup, safeSaltNonce);

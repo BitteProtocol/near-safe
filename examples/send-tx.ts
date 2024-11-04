@@ -14,10 +14,12 @@ async function main(): Promise<void> {
   ] = await Promise.all([loadEnv(), loadArgs()]);
   const chainId = 11155111;
   const txManager = await NearSafe.create({
-    accountId: nearAccountId,
-    mpcContractId,
+    mpc: {
+      accountId: nearAccountId,
+      mpcContractId,
+      privateKey: nearAccountPrivateKey,
+    },
     pimlicoKey,
-    privateKey: nearAccountPrivateKey,
     safeSaltNonce: DEFAULT_SAFE_SALT_NONCE,
   });
   const deployed = await txManager.safeDeployed(chainId);
