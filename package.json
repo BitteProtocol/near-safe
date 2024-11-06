@@ -35,7 +35,7 @@
     "build:deployments": "tsx scripts/safe-deployments.ts && prettier --write 'src/_gen/**/*.ts'",
     "start": "yarn example",
     "example": "tsx examples/send-tx.ts",
-    "lint": "eslint . --ignore-pattern dist/",
+    "lint": "prettier --check '{src,examples,tests}/**/*.{js,jsx,ts,tsx}' && eslint . --ignore-pattern dist/",
     "fmt": "prettier --write '{src,examples,tests}/**/*.{js,jsx,ts,tsx}' && yarn lint --fix",
     "test": "jest",
     "all": "yarn fmt && yarn lint && yarn build"
@@ -45,7 +45,7 @@
     "near-api-js": "^5.0.0",
     "near-ca": "^0.6.0",
     "semver": "^7.6.3",
-    "viem": "^2.16.5"
+    "viem": "^2.21.41"
   },
   "devDependencies": {
     "@safe-global/safe-deployments": "^1.37.0",
