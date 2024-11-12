@@ -1,7 +1,15 @@
-import { EIP712TypedData } from "near-ca";
+import {
+  EIP712TypedData,
+  isEIP712TypedData,
+  isRlpHex,
+  isTransactionSerializable,
+} from "near-ca";
 
-import { isRlpHex, isTransactionSerializable } from "../lib/safe-message";
-import { DecodedTxData, SafeEncodedSignRequest, UserOperation } from "../types";
+import {
+  DecodedTxData,
+  isUserOperation,
+  SafeEncodedSignRequest,
+} from "../types";
 import {
   decodeRlpHex,
   decodeTransactionSerializable,
@@ -26,13 +34,22 @@ export function decodeTxData({
   if (isTransactionSerializable(data)) {
     return decodeTransactionSerializable(chainId, data);
   }
-  if (typeof data !== "string") {
+  if (isEIP712TypedData(data)) {
     return decodeTypedData(chainId, data);
   }
+  // At this point we know data must be a string
+  if (typeof data !== "string") {
+    throw new Error(`decodeTxData: Unexpected non-string data type ${data}`);
+  }
   try {
-    // Stringified UserOperation.
-    const userOp: UserOperation = JSON.parse(data);
-    return decodeUserOperation(chainId, userOp);
+    const parsedData = JSON.parse(data);
+    if (isEIP712TypedData(parsedData)) {
+      return decodeTypedData(chainId, parsedData);
+    }
+    if (isUserOperation(parsedData)) {
+      return decodeUserOperation(chainId, parsedData);
+    }
+    throw new Error("decodeTxData: Invalid message format");
   } catch (error: unknown) {
     if (error instanceof SyntaxError) {
       // Raw message string.

@@ -9,11 +9,7 @@ import {
   Hash,
   hashMessage,
   hashTypedData,
-  Hex,
   isHex,
-  parseTransaction,
-  serializeTransaction,
-  TransactionSerializable,
 } from "viem";
 
 export type DecodedSafeMessage = {
@@ -125,36 +121,5 @@ export function decodeSafeMessage(
   };
 }
 
-// const isEIP712TypedData = (obj: any): obj is EIP712TypedData => {
-//   return (
-//     typeof obj === "object" &&
-//     obj != null &&
-//     "domain" in obj &&
-//     "types" in obj &&
-//     "message" in obj
-//   );
-// };
-
 // export const isBlindSigningPayload = (obj: EIP712TypedData | string): boolean =>
 //   !isEIP712TypedData(obj) && isHash(obj);
-
-// Cheeky attempt to serialize. return true if successful!
-export function isTransactionSerializable(
-  data: unknown
-): data is TransactionSerializable {
-  try {
-    serializeTransaction(data as TransactionSerializable);
-    return true;
-  } catch (error) {
-    return false;
-  }
-}
-
-export function isRlpHex(data: unknown): data is Hex {
-  try {
-    parseTransaction(data as Hex);
-    return true;
-  } catch (error) {
-    return false;
-  }
-}

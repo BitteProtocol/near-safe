@@ -6,6 +6,8 @@ import {
 } from "near-ca";
 import { Address, Hex, ParseAbi } from "viem";
 
+export * from "./guards";
+
 /**
  * Represents a collection of Safe contract deployments, each with its own address and ABI.
  */
