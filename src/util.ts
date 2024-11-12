@@ -68,7 +68,7 @@ export async function isContract(
 }
 
 export function getClient(chainId: number): PublicClient {
-  // TODO(bh2smith)
+  // TODO(bh2smith): Update defailt client URL in viem for sepolia.
   if (chainId === 11155111) {
     return createPublicClient({ transport: http(DEFAULT_SETUP_RPC) });
   }

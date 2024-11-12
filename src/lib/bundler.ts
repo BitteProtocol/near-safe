@@ -182,15 +182,6 @@ async function handleRequest<T>(clientMethod: () => Promise<T>): Promise<T> {
   }
 }
 
-// // TODO(bh2smith) Should probably get reasonable estimates here:
-// const defaultPaymasterData = (safeNotDeployed: boolean): PaymasterData => {
-//   return {
-//     verificationGasLimit: toHex(safeNotDeployed ? 500000 : 100000),
-//     callGasLimit: toHex(100000),
-//     preVerificationGas: toHex(100000),
-//   };
-// };
-
 export function stripApiKey(error: unknown): string {
   const message = error instanceof Error ? error.message : String(error);
   return message.replace(/(apikey=)[^\s&]+/, "$1***");

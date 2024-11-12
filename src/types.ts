@@ -59,8 +59,6 @@ export interface UserOperation extends UnsignedUserOperation, PaymasterData {
   /** Optional signature for the user operation. */
   signature?: Hex;
 }
-// TODO(bh2smith): deduplicate the GasData fields between UserOperation and PaymasterData
-// {verificationGasLimit, callGasLimit, preVerificationGas}
 
 /**
  * Represents additional paymaster-related data for a user operation.
