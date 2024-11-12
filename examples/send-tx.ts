@@ -1,9 +1,14 @@
 import dotenv from "dotenv";
 import { ethers } from "ethers";
-import { isAddress } from "viem";
+import { formatEther, isAddress } from "viem";
 
 import { loadArgs, loadEnv } from "./cli";
-import { DEFAULT_SAFE_SALT_NONCE, NearSafe, Network } from "../src";
+import {
+  DEFAULT_SAFE_SALT_NONCE,
+  NearSafe,
+  Network,
+  userOpTransactionCost,
+} from "../src";
 
 dotenv.config();
 
@@ -48,8 +53,8 @@ async function main(): Promise<void> {
   const safeOpHash = await txManager.opHash(chainId, unsignedUserOp);
   console.log("Safe Op Hash", safeOpHash);
 
-  // TODO: Evaluate gas cost (in ETH)
-  const gasCost = ethers.parseEther("0.01");
+  const gasCost = userOpTransactionCost(unsignedUserOp);
+  console.log("Estimated gas cost", formatEther(gasCost));
   // Whenever not using paymaster, or on value transfer, the Safe must be funded.
   const sufficientFunded = await txManager.sufficientlyFunded(
     chainId,

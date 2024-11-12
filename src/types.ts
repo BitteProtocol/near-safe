@@ -55,27 +55,22 @@ export interface UnsignedUserOperation {
 /**
  * Supported representation of a user operation for EntryPoint version 0.7, including gas limits and signature.
  */
-export interface UserOperation extends UnsignedUserOperation {
-  /** The gas limit for verification of the operation. */
-  verificationGasLimit: Hex;
-  /** The gas limit for the execution of the operation call. */
-  callGasLimit: Hex;
-  /** The gas used before verification begins. */
-  preVerificationGas: Hex;
+export interface UserOperation extends UnsignedUserOperation, PaymasterData {
   /** Optional signature for the user operation. */
   signature?: Hex;
 }
-// TODO(bh2smith): deduplicate the GasData fields between UserOperation and PaymasterData
-// {verificationGasLimit, callGasLimit, preVerificationGas}
 
 /**
  * Represents additional paymaster-related data for a user operation.
  */
-export interface PaymasterData {
+export interface PaymasterData extends UserOperationGas {
   /** Optional paymaster address responsible for covering gas costs. */
   paymaster?: Address;
   /** Optional additional data required by the paymaster. */
   paymasterData?: Hex;
+}
+
+export interface UserOperationGas {
   /** The gas limit for paymaster verification. */
   paymasterVerificationGasLimit?: Hex;
   /** The gas limit for paymaster post-operation execution. */

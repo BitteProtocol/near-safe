@@ -178,7 +178,6 @@ export class NearSafe {
 
     const paymasterData = await bundler.getPaymasterData(
       rawUserOp,
-      !safeDeployed,
       sponsorshipPolicy
     );
 
