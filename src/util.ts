@@ -23,7 +23,7 @@ import {
 } from "viem";
 
 import { DEFAULT_SETUP_RPC } from "./constants";
-import { PaymasterData, MetaTransaction } from "./types";
+import { PaymasterData, MetaTransaction, UserOperation } from "./types";
 
 export const PLACEHOLDER_SIG = encodePacked(["uint48", "uint48"], [0, 0]);
 
@@ -200,4 +200,34 @@ export function assertUnique<T>(
   if (uniqueValues.size > 1) {
     throw new Error(errorMessage);
   }
+}
+
+export function userOpTransactionCost(userOp: UserOperation): bigint {
+  // Convert values from hex to decimal
+  const preVerificationGas = BigInt(userOp.preVerificationGas);
+  const verificationGasLimit = BigInt(userOp.verificationGasLimit);
+  const callGasLimit = BigInt(userOp.callGasLimit);
+  const paymasterVerificationGasLimit = BigInt(
+    userOp.paymasterVerificationGasLimit || "0x0"
+  );
+  const paymasterPostOpGasLimit = BigInt(
+    userOp.paymasterPostOpGasLimit || "0x0"
+  );
+
+  // Sum total gas
+  const totalGasUsed =
+    preVerificationGas +
+    verificationGasLimit +
+    callGasLimit +
+    paymasterVerificationGasLimit +
+    paymasterPostOpGasLimit;
+
+  // Convert maxFeePerGas from hex to decimal
+  const maxFeePerGas = BigInt(userOp.maxFeePerGas);
+
+  // Calculate total cost in wei
+  const totalCostInWei = totalGasUsed * maxFeePerGas;
+
+  // Convert to Ether for a human-readable value
+  return totalCostInWei;
 }

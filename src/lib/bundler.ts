@@ -5,7 +5,6 @@ import {
   http,
   PublicClient,
   rpcSchema,
-  toHex,
   Transport,
   RpcError,
   HttpRequestError,
@@ -18,6 +17,7 @@ import {
   SponsorshipPolicyData,
   UnsignedUserOperation,
   UserOperation,
+  UserOperationGas,
   UserOperationReceipt,
 } from "../types";
 import { PLACEHOLDER_SIG } from "../util";
@@ -35,6 +35,11 @@ type BundlerRpcSchema = [
     // [UnsignedUserOperation, Address]
     Parameters: [UnsignedUserOperation, Address, SponsorshipPolicy];
     ReturnType: PaymasterData;
+  },
+  {
+    Method: "eth_estimateUserOperationGas";
+    Parameters: [UnsignedUserOperation, Address];
+    ReturnType: UserOperationGas;
   },
   {
     Method: "eth_sendUserOperation";
@@ -71,24 +76,29 @@ export class Erc4337Bundler {
 
   async getPaymasterData(
     rawUserOp: UnsignedUserOperation,
-    safeNotDeployed: boolean,
     sponsorshipPolicy?: string
   ): Promise<PaymasterData> {
-    // TODO: Keep this option out of the bundler
+    const userOp = { ...rawUserOp, signature: PLACEHOLDER_SIG };
     if (sponsorshipPolicy) {
       console.log("Requesting paymaster data...");
       return handleRequest<PaymasterData>(() =>
         this.client.request({
           method: "pm_sponsorUserOperation",
           params: [
-            { ...rawUserOp, signature: PLACEHOLDER_SIG },
+            userOp,
             this.entryPointAddress,
             { sponsorshipPolicyId: sponsorshipPolicy },
           ],
         })
       );
     }
-    return defaultPaymasterData(safeNotDeployed);
+    console.log("Estimating user operation gas...");
+    return handleRequest<UserOperationGas>(() =>
+      this.client.request({
+        method: "eth_estimateUserOperationGas",
+        params: [userOp, this.entryPointAddress],
+      })
+    );
   }
 
   async sendUserOperation(userOp: UserOperation): Promise<Hash> {
@@ -172,14 +182,14 @@ async function handleRequest<T>(clientMethod: () => Promise<T>): Promise<T> {
   }
 }
 
-// TODO(bh2smith) Should probably get reasonable estimates here:
-const defaultPaymasterData = (safeNotDeployed: boolean): PaymasterData => {
-  return {
-    verificationGasLimit: toHex(safeNotDeployed ? 500000 : 100000),
-    callGasLimit: toHex(100000),
-    preVerificationGas: toHex(100000),
-  };
-};
+// // TODO(bh2smith) Should probably get reasonable estimates here:
+// const defaultPaymasterData = (safeNotDeployed: boolean): PaymasterData => {
+//   return {
+//     verificationGasLimit: toHex(safeNotDeployed ? 500000 : 100000),
+//     callGasLimit: toHex(100000),
+//     preVerificationGas: toHex(100000),
+//   };
+// };
 
 export function stripApiKey(error: unknown): string {
   const message = error instanceof Error ? error.message : String(error);
