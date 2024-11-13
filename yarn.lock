@@ -4441,10 +4441,10 @@ near-api-js@^5.0.0, near-api-js@^5.0.1:
     near-abi "0.1.1"
     node-fetch "2.6.7"
 
-near-ca@^0.7.1:
-  version "0.7.1"
-  resolved "https://registry.yarnpkg.com/near-ca/-/near-ca-0.7.1.tgz#4116f2c716850e7bfbb4a05d49206618103a8cde"
-  integrity sha512-Vjbd9OFfjDuq9oQj/+63s6vPq/yBNPOERGY5zsogOo/Zr8oTFKTfOASz20tBBna3MDyUTlPH2EphTDry1EVusw==
+near-ca@^0.7.2:
+  version "0.7.2"
+  resolved "https://registry.yarnpkg.com/near-ca/-/near-ca-0.7.2.tgz#e53442c112c2064ef267f36ea08715aa0c95a35f"
+  integrity sha512-seJ6xin7JJKsWFrjpmRJHeiwvVCMli0T6zDNUKaH+qys8MdRbvq0ft3I2/HARodFTfKnkjS1GNqWsMxO6GsOvA==
   dependencies:
     "@walletconnect/web3wallet" "^1.13.0"
     elliptic "^6.5.6"

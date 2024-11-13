@@ -1,13 +1,9 @@
-import {
-  EIP712TypedData,
-  isEIP712TypedData,
-  isRlpHex,
-  isTransactionSerializable,
-} from "near-ca";
+import { isRlpHex, isTransactionSerializable } from "near-ca";
 
 import {
   DecodedTxData,
-  isUserOperation,
+  parseEip712TypedData,
+  parseUserOperation,
   SafeEncodedSignRequest,
 } from "../types";
 import {
@@ -34,42 +30,29 @@ export function decodeTxData({
   if (isTransactionSerializable(data)) {
     return decodeTransactionSerializable(chainId, data);
   }
-  if (isEIP712TypedData(data)) {
-    return decodeTypedData(chainId, data);
+  const parsedTypedData = parseEip712TypedData(data);
+  if (parsedTypedData) {
+    return decodeTypedData(chainId, parsedTypedData);
   }
-  // At this point we know data must be a string
-  if (typeof data !== "string") {
-    throw new Error(`decodeTxData: Unexpected non-string data type ${data}`);
+  const userOp = parseUserOperation(data);
+  if (userOp) {
+    return decodeUserOperation(chainId, userOp);
   }
-  try {
-    const parsedData = JSON.parse(data);
-    if (isEIP712TypedData(parsedData)) {
-      return decodeTypedData(chainId, parsedData);
-    }
-    if (isUserOperation(parsedData)) {
-      return decodeUserOperation(chainId, parsedData);
-    }
-    throw new Error("decodeTxData: Invalid message format");
-  } catch (error: unknown) {
-    if (error instanceof SyntaxError) {
-      // Raw message string.
-      return {
-        chainId,
-        costEstimate: "0",
-        transactions: [],
-        message: data,
-      };
-    } else {
-      // TODO: This shouldn't happen anymore and can probably be reverted.
-      // We keep it here now, because near-ca might not have adapted its router.
-      console.warn("Failed UserOp Parsing, try TypedData Parsing", error);
-      try {
-        const typedData: EIP712TypedData = JSON.parse(data);
-        return decodeTypedData(chainId, typedData);
-      } catch (error: unknown) {
-        const message = error instanceof Error ? error.message : String(error);
-        throw new Error(`decodeTxData: Unexpected error - ${message}`);
-      }
-    }
+  // At this point we are certain that the data is a string.
+  // Typescript would disagree here because of the EIP712TypedData possibility that remains.
+  // However this is captured (indirectly) by parseEip712TypedData above.
+  // We check now if its a string and return a reasonable default (for the case of a raw message).
+  if (typeof data === "string") {
+    return {
+      chainId,
+      costEstimate: "0",
+      transactions: [],
+      message: data,
+    };
   }
+  // Otherwise we have no idea what the data is and we throw.
+  console.warn("Unrecognized txData format,", chainId, data);
+  throw new Error(
+    `decodeTxData: Invalid or unsupported message format ${data}`
+  );
 }

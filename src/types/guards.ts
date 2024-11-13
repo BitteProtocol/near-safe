@@ -1,3 +1,4 @@
+import { EIP712TypedData, isEIP712TypedData } from "near-ca";
 import { isAddress, isHex } from "viem";
 
 import { UserOperation } from ".";
@@ -76,3 +77,32 @@ export const isUserOperation = (data: unknown): data is UserOperation => {
 
   return true;
 };
+
+export const parseWithTypeGuard = <T>(
+  data: unknown,
+  typeGuard: (value: unknown) => value is T
+): T | null => {
+  // Case 1: Already the correct type
+  if (typeGuard(data)) {
+    return data;
+  }
+
+  // Case 2: Stringified data
+  if (typeof data === "string") {
+    try {
+      const parsed = JSON.parse(data);
+      return typeGuard(parsed) ? parsed : null;
+    } catch (error) {
+      return null;
+    }
+  }
+
+  // Neither valid type nor valid stringified type
+  return null;
+};
+
+export const parseUserOperation = (data: unknown): UserOperation | null =>
+  parseWithTypeGuard(data, isUserOperation);
+
+export const parseEip712TypedData = (data: unknown): EIP712TypedData | null =>
+  parseWithTypeGuard(data, isEIP712TypedData);
