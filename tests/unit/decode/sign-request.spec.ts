@@ -1,10 +1,15 @@
 import { EIP712TypedData } from "near-ca";
-import { TransactionSerializableEIP1559 } from "viem";
+import {
+  serializeTransaction,
+  TransactionSerializable,
+  TransactionSerializableEIP1559,
+} from "viem";
 
 import {
   SafeEncodedSignRequest,
   UserOperation,
   decodeTxData,
+  determineBroadcastTarget,
 } from "../../../src";
 import {
   decodeRlpHex,
@@ -209,6 +214,75 @@ describe("decoding functions", () => {
           operation: 0,
         },
       ],
+    });
+  });
+});
+
+const validEIP1559Transaction: TransactionSerializable = {
+  to: "0x70997970C51812dc3A010C7d01b50e0d17dc79C8",
+  value: BigInt(1000000000000000000), // 1 ETH
+  chainId: 1,
+  maxFeePerGas: 1n,
+};
+describe("determineBroadcastTarget", () => {
+  it("identifies EVM transactions", () => {
+    const rlpHex = serializeTransaction(validEIP1559Transaction);
+    const result = determineBroadcastTarget(rlpHex);
+
+    expect(result).toEqual({
+      type: "evm",
+      transaction: expect.any(Object),
+    });
+  });
+
+  it("identifies EVM transactions", () => {
+    const result = determineBroadcastTarget(validEIP1559Transaction);
+
+    expect(result).toEqual({
+      type: "evm",
+      transaction: expect.any(Object),
+    });
+  });
+
+  it("identifies UserOperations", () => {
+    const userOp = {
+      nonce: "0x0",
+      sender: "0x1f87B80f909a74d8Be617f350EC20a16CfC177D7",
+      factory: "0x4e1DCf7AD4e460CfD30791CCC4F9c8a4f820ec67",
+      callData:
+        "0x7bb374280000000000000000000000008d99f8b2710e6a3b94d9bf465a98e5273069acbd0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000008000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000002b00b00000000000000000000000000000000000000000000000000000000000062697474652f6e6561722d7361666500",
+      paymaster: "0x0000000000000039cd5e8aE05257CE51C473ddd1",
+      signature: "0x000000000000000000000000",
+      factoryData:
+        "0x1688f0b900000000000000000000000029fcb43b46531bca003ddc8fcb67ffe91900c76200000000000000000000000000000000000000000000000000000000000000600000000000000000000000000000000062697474652f77616c6c65740000000000000000000000000000000000000000000000000000000000000000000001e4b63e800d000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000000010000000000000000000000002dd68b007b46fbe91b9a7c3eda5a7a1063cb5b47000000000000000000000000000000000000000000000000000000000000014000000000000000000000000075cf11467937ce3f2f357ce24ffc3dbf8fd5c2260000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001000000000000000000000000523434f148b321a153e1c80f56e44c406c26636300000000000000000000000000000000000000000000000000000000000000648d0dc49f0000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000000100000000000000000000000075cf11467937ce3f2f357ce24ffc3dbf8fd5c2260000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+      callGasLimit: "0x1f2e9",
+      maxFeePerGas: "0x6e64fe30",
+      paymasterData: "0x000000673375fe000000000000",
+      preVerificationGas: "0xe6f7",
+      maxPriorityFeePerGas: "0x139638",
+      verificationGasLimit: "0x7bb14",
+      paymasterPostOpGasLimit: "0x1",
+      paymasterVerificationGasLimit: "0x6cbb",
+    };
+
+    const result = determineBroadcastTarget(JSON.stringify(userOp));
+
+    expect(result).toEqual({
+      type: "bundler",
+      userOp,
+    });
+  });
+
+  it("returns null for invalid messages", () => {
+    const invalidCases = [
+      "not valid json",
+      "{}",
+      JSON.stringify({ invalid: "userOp" }),
+      "0xinvalidhex",
+    ];
+
+    invalidCases.forEach((testCase) => {
+      expect(determineBroadcastTarget(testCase)).toBeNull();
     });
   });
 });

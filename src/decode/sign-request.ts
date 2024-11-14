@@ -1,10 +1,12 @@
-import { isRlpHex, isTransactionSerializable } from "near-ca";
+import { EvmMessage, isRlpHex, isTransactionSerializable } from "near-ca";
+import { parseTransaction, TransactionSerializable } from "viem";
 
 import {
   DecodedTxData,
   parseEip712TypedData,
   parseUserOperation,
   SafeEncodedSignRequest,
+  UserOperation,
 } from "../types";
 import {
   decodeRlpHex,
@@ -55,4 +57,51 @@ export function decodeTxData({
   throw new Error(
     `decodeTxData: Invalid or unsupported message format ${data}`
   );
+}
+
+/**
+ * Represents different types of broadcastable messages
+ */
+export type BroadcastTarget =
+  | { type: "evm"; transaction: TransactionSerializable }
+  | { type: "bundler"; userOp: UserOperation };
+
+/**
+ * Determines where and how an EVM message should be broadcast
+ * @param evmMessage - The message to be analyzed
+ * @returns Information about how to broadcast the message, or null if invalid
+ */
+export function determineBroadcastTarget(
+  evmMessage: EvmMessage
+): BroadcastTarget | null {
+  // Case 1: User Operation
+  if (typeof evmMessage === "string") {
+    try {
+      const parsed = parseUserOperation(evmMessage);
+      if (parsed) {
+        return {
+          type: "bundler",
+          userOp: parsed,
+        };
+      }
+    } catch (error) {
+      console.warn("Failed to parse potential UserOperation:", error);
+    }
+  }
+  // Case 2: RLP Encoded EVM transaction
+  if (isRlpHex(evmMessage)) {
+    return {
+      type: "evm",
+      transaction: parseTransaction(evmMessage),
+    };
+  }
+  // Case 3: Serializable Transaction
+  if (isTransactionSerializable(evmMessage)) {
+    return {
+      type: "evm",
+      transaction: evmMessage,
+    };
+  }
+
+  return null;
 }
