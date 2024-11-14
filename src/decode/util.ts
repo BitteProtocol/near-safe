@@ -10,7 +10,7 @@ import {
 
 import { SAFE_DEPLOYMENTS } from "../_gen/deployments";
 import { decodeMulti, isMultisendTx } from "../lib/multisend";
-import { DecodedTxData, UserOperation } from "../types";
+import { DecodedTxData, MetaTransaction, UserOperation } from "../types";
 
 export function decodeTransactionSerializable(
   chainId: number,
@@ -88,15 +88,4 @@ export function decodeUserOperation(
     costEstimate: formatEther(BigInt(callGasLimit) * maxGasPrice),
     transactions,
   };
-}
-
-export declare enum OperationType {
-  Call = 0,
-  DelegateCall = 1,
-}
-export interface MetaTransaction {
-  readonly to: string;
-  readonly value: string;
-  readonly data: string;
-  readonly operation?: OperationType;
 }
