@@ -57,7 +57,7 @@ export function packPaymasterData(data: PaymasterData): Hex {
 }
 
 export function containsValue(transactions: MetaTransaction[]): boolean {
-  return transactions.some((tx) => tx.value !== "0");
+  return transactions.some((tx) => BigInt(tx.value) !== 0n);
 }
 
 export async function isContract(

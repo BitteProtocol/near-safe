@@ -354,7 +354,7 @@ export class NearSafe {
   ): Promise<MetaTransaction> {
     return {
       to: this.address,
-      value: "0",
+      value: "0x00",
       data: await this.safePack.removeOwnerData(chainId, this.address, address),
     };
   }
