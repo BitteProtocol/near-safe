@@ -1,9 +1,31 @@
 import { Network } from "near-ca";
 
 import { decodeTxData } from ".";
-import { SafeEncodedSignRequest } from "../types";
+import { DecodedTxData, SafeEncodedSignRequest } from "../types";
 
-export const SAFE_NETWORKS: { [chainId: number]: string } = {
+/**
+ * Explain a Safe Signature Request.
+ * @param signRequest - The Safe Signature Request to explain.
+ * @returns The decoded transaction data as stringified JSON or null if there was an error.
+ */
+export async function explainSignRequest(
+  signRequest: SafeEncodedSignRequest
+): Promise<string> {
+  // Decode the Signature Request
+  const decodedEvmData = decodeTxData(signRequest);
+
+  // Decode the function signatures
+  const functionSignatures = await Promise.all(
+    decodedEvmData.transactions.map((tx) =>
+      safeDecodeTx(tx.data, tx.to, decodedEvmData.chainId)
+    )
+  );
+
+  // Format the decoded data
+  return formatEvmData(decodedEvmData, functionSignatures);
+}
+
+const SAFE_NETWORKS: { [chainId: number]: string } = {
   1: "mainnet", // Ethereum Mainnet
   10: "optimism", // Optimism Mainnet
   56: "binance", // Binance Smart Chain Mainnet
@@ -113,32 +135,18 @@ export async function safeDecodeTx(
   }
 }
 
-/**
- * Explain a Safe Signature Request.
- * @param signRequest - The Safe Signature Request to explain.
- * @returns The decoded transaction data as stringified JSON or null if there was an error.
- */
-export async function explainSignRequest(
-  signRequest: SafeEncodedSignRequest
-): Promise<string> {
-  // Decode the Signature Request
-  const decodedEvmData = decodeTxData(signRequest);
-
-  // Decode the function signatures
-  const functionSignatures = await Promise.all(
-    decodedEvmData.transactions.map((tx) =>
-      safeDecodeTx(tx.data, tx.to, decodedEvmData.chainId)
-    )
-  );
-
-  // Format the decoded data
+export const formatEvmData = (
+  decodedEvmData: DecodedTxData,
+  functionSignatures: (FunctionSignature | null)[] = []
+): string => {
   const formatted = {
     ...decodedEvmData,
     network: Network.fromChainId(decodedEvmData.chainId).name,
     functionSignatures,
   };
+
   return JSON.stringify(formatted, bigIntReplacer, 2);
-}
+};
 
 /**
  * Replaces bigint values with their string representation.

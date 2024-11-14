@@ -223,7 +223,7 @@ export interface MetaTransaction {
   /** The destination address for the meta-transaction. */
   readonly to: string;
   /** The value to be sent with the transaction (as a string to handle large numbers). */
-  readonly value: string;
+  readonly value: string; // TODO: Change to hex string! No Confusion.
   /** The encoded data for the contract call or function execution. */
   readonly data: string;
   /** Optional type of operation (call or delegate call). */
