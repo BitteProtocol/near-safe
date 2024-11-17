@@ -8,20 +8,18 @@ dotenv.config();
 
 const TESTNET_ROOT_KEY =
   "secp256k1:4NfTiv3UsGahebgTaHyD9vF8KYKMBnfd6kh94mK6xv8fGBiJB8TBtFMP5WWXz6B89Ac1fbpzPwAvoyQebemHFwx3";
-const MAINNET_ROOT_KEY =
-  "secp256k1:3tFRbMqmoa6AAALMrEFAYCEoHcqKxeW38YptwowBVBtXK1vo36HDbUWuR6EZmoK4JcH6HDkNMGGqP1ouV7VZUWya";
+// const MAINNET_ROOT_KEY =
+//   "secp256k1:3tFRbMqmoa6AAALMrEFAYCEoHcqKxeW38YptwowBVBtXK1vo36HDbUWuR6EZmoK4JcH6HDkNMGGqP1ouV7VZUWya";
 
 describe("Near Safe Requests", () => {
   let adapter: NearSafe;
   beforeAll(async () => {
-    const networkId = "testnet";
     // Initialize the NearSafe adapter once before all tests
     adapter = await NearSafe.create({
       mpc: {
         accountId: "neareth-dev.testnet",
         mpcContractId: "v1.signer-prod.testnet",
-        rootPublicKey:
-          networkId === "testnet" ? TESTNET_ROOT_KEY : MAINNET_ROOT_KEY,
+        rootPublicKey: TESTNET_ROOT_KEY,
       },
       pimlicoKey: process.env.PIMLICO_KEY!,
       safeSaltNonce: DEFAULT_SAFE_SALT_NONCE,
@@ -64,7 +62,7 @@ describe("Near Safe Requests", () => {
     await expect(adapter.policyForChainId(100)).resolves.not.toThrow();
   });
 
-  it.only("adapter: encodeEvmTx", async () => {
+  it("adapter: encodeEvmTx", async () => {
     await expect(
       adapter.encodeSignRequest({
         method: "eth_sendTransaction",
