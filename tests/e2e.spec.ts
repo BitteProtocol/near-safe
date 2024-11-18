@@ -123,7 +123,7 @@ describe("Near Safe Requests", () => {
       method: "eth_signTypedData_v4",
       params: [adapter.mpcAddress, typedDataString],
     });
-    expect(nearPayload.actions[0].params.args).toStrictEqual({
+    expect(nearPayload.actions[0]!.params.args).toStrictEqual({
       request: {
         path: "ethereum,1",
         payload: [

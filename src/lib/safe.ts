@@ -240,6 +240,6 @@ export class SafeContractSuite {
     if (ownerIndex === -1) {
       throw new Error(`Not a current owner: ${owner}`);
     }
-    return ownerIndex > 0 ? currentOwners[ownerIndex - 1] : SENTINEL_OWNERS;
+    return ownerIndex > 0 ? currentOwners[ownerIndex - 1]! : SENTINEL_OWNERS;
   }
 }

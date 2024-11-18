@@ -37,7 +37,7 @@
     "example": "tsx examples/send-tx.ts",
     "lint": "prettier --check '{src,examples,tests}/**/*.{js,jsx,ts,tsx}' && eslint . --ignore-pattern dist/",
     "fmt": "prettier --write '{src,examples,tests}/**/*.{js,jsx,ts,tsx}' && yarn lint --fix",
-    "test": "jest",
+    "test": "jest --passWithNoTests",
     "all": "yarn fmt && yarn lint && yarn build"
   },
   "dependencies": {
@@ -59,8 +59,6 @@
     "dotenv": "^16.4.5",
     "eslint": "^9.14.0",
     "eslint-plugin-import": "^2.31.0",
-    "ethers": "^6.13.4",
-    "ethers-multisend": "^3.1.0",
     "jest": "^29.7.0",
     "prettier": "^3.3.3",
     "ts-jest": "^29.2.5",

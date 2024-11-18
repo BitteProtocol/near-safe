@@ -1,5 +1,4 @@
 import dotenv from "dotenv";
-import { ethers } from "ethers";
 import { formatEther, isAddress } from "viem";
 
 import { loadArgs, loadEnv } from "./cli";

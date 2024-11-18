@@ -405,7 +405,9 @@ export class NearSafe {
 
     // Assert uniqueness
     assertUnique(fromAddresses);
-
+    if (!fromAddresses[0]) {
+      throw new Error("No from address provided");
+    }
     // Early return with eoaEncoding if `from` is not the Safe
     if (!this.encodeForSafe(fromAddresses[0])) {
       // TODO: near-ca needs to update this for typed data like we did.

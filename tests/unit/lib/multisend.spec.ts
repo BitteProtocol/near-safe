@@ -1,4 +1,3 @@
-import { decodeMulti as decodeMultiEthers } from "ethers-multisend";
 import { encodeFunctionData, erc20Abi, Hex, parseUnits, toHex } from "viem";
 
 import { OperationType } from "../../../src";
@@ -69,17 +68,17 @@ describe("Multisend", () => {
         operation: OperationType.Call,
         to: "0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984",
         value: toHex(BigInt(parseUnits("10", 18))),
-        data: "0x00",
+        data: "0x",
       },
       {
         operation: OperationType.Call,
         to: "0x36F4BFC9f49Dc5D4b2d10c4a48a6b30128BD79bC",
-        value: "0x00",
+        value: "0x0",
         data: ercTransferData,
       },
     ];
+
     const multiSendTx = encodeMulti(input);
-    const result = decodeMultiEthers(multiSendTx.data);
-    expect(result).toStrictEqual(input);
+    expect(decodeMultiViem(multiSendTx.data as Hex)).toStrictEqual(input);
   });
 });

@@ -1,69 +1,47 @@
 import { zeroAddress } from "viem";
 
 import { SafeContractSuite as ViemPack } from "../../../src/lib/safe";
-import { ContractSuite as EthPack } from "../ethers-safe";
 
 describe("Safe Pack", () => {
-  let ethersPack: EthPack;
   let viemPack: ViemPack;
   beforeAll(async () => {
-    ethersPack = await EthPack.init();
     viemPack = new ViemPack();
   });
 
   it("init", async () => {
-    expect(ethersPack.singleton.target).toEqual(viemPack.singleton.address);
-    expect(await ethersPack.singleton.getAddress()).toEqual(
-      viemPack.singleton.address
+    expect(viemPack.singleton.address).toEqual(
+      "0x29fcB43b46531BcA003ddC8FCB67FFE91900C762"
     );
-
-    expect(ethersPack.m4337.target).toEqual(viemPack.m4337.address);
-    expect(await ethersPack.m4337.getAddress()).toEqual(viemPack.m4337.address);
-
-    expect(ethersPack.moduleSetup.target).toEqual(viemPack.moduleSetup.address);
-    expect(await ethersPack.moduleSetup.getAddress()).toEqual(
-      viemPack.moduleSetup.address
+    expect(viemPack.m4337.address).toEqual(
+      "0x75cf11467937ce3F2f357CE24ffc3DBF8fD5c226"
     );
-
-    expect(ethersPack.moduleSetup.target).toEqual(viemPack.moduleSetup.address);
-    expect(await ethersPack.moduleSetup.getAddress()).toEqual(
-      viemPack.moduleSetup.address
+    expect(viemPack.moduleSetup.address).toEqual(
+      "0x2dd68b007B46fBe91B9A7c3EDa5A7a1063cB5b47"
     );
-
-    expect(ethersPack.entryPoint.target).toEqual(viemPack.entryPoint.address);
-    expect(await ethersPack.entryPoint.getAddress()).toEqual(
-      viemPack.entryPoint.address
+    expect(viemPack.entryPoint.address).toEqual(
+      "0x0000000071727De22E5E9d8BAf0edAc6f37da032"
     );
-
-    expect(ethersPack.proxyFactory.target).toEqual(
-      viemPack.proxyFactory.address
-    );
-    expect(await ethersPack.proxyFactory.getAddress()).toEqual(
-      viemPack.proxyFactory.address
+    expect(viemPack.proxyFactory.address).toEqual(
+      "0x4e1DCf7AD4e460CfD30791CCC4F9c8a4f820ec67"
     );
   });
 
   it("addOwnerData", () => {
-    expect(ethersPack.addOwnerData(zeroAddress)).toEqual(
-      viemPack.addOwnerData(zeroAddress)
+    expect(viemPack.addOwnerData(zeroAddress)).toEqual(
+      "0x0d582f1300000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001"
     );
   });
   it("getSetup", () => {
-    expect(ethersPack.getSetup([zeroAddress])).toEqual(
-      viemPack.getSetup([zeroAddress])
+    expect(viemPack.getSetup([zeroAddress])).toEqual(
+      "0xb63e800d000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000000010000000000000000000000002dd68b007b46fbe91b9a7c3eda5a7a1063cb5b47000000000000000000000000000000000000000000000000000000000000014000000000000000000000000075cf11467937ce3f2f357ce24ffc3dbf8fd5c2260000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000648d0dc49f0000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000000100000000000000000000000075cf11467937ce3f2f357ce24ffc3dbf8fd5c22600000000000000000000000000000000000000000000000000000000"
     );
   });
 
   it("addressForSetup", async () => {
     const saltNonce = "1";
     const setup = viemPack.getSetup([zeroAddress]);
-    const [eps0, vps0, eps1, vps1] = await Promise.all([
-      ethersPack.addressForSetup(setup, saltNonce),
-      viemPack.addressForSetup(setup, saltNonce),
-      ethersPack.addressForSetup(setup, saltNonce),
-      viemPack.addressForSetup(setup, saltNonce),
-    ]);
-    expect(eps0).toEqual(vps0);
-    expect(eps1).toEqual(vps1);
+    expect(await viemPack.addressForSetup(setup, saltNonce)).toEqual(
+      "0x6531e810c91b0bCFc6733B723a37d051Ad6dCbdd"
+    );
   });
 });
