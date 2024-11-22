@@ -493,7 +493,7 @@ export class NearSafe {
         {
           from: this.address,
           to: zeroAddress,
-          value: "0x00",
+          value: "0x0",
           data: "0x",
         },
       ],
