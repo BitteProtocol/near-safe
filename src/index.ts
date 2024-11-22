@@ -5,6 +5,7 @@ export * from "./constants";
 export * from "./decode";
 export * from "./lib/safe-message";
 
+export { SafeContractSuite } from "./lib/safe";
 // TODO: Improve re-exports...
 export {
   Network,
