@@ -484,4 +484,32 @@ export class NearSafe {
     const bundler = this.bundlerForChainId(chainId);
     return bundler.getSponsorshipPolicies();
   }
+
+  deploymentRequest(chainId: number): SignRequestData {
+    return {
+      method: "eth_sendTransaction",
+      chainId,
+      params: [
+        {
+          from: this.address,
+          to: zeroAddress,
+          value: "0x00",
+          data: "0x",
+        },
+      ],
+    };
+  }
+
+  addOwnerRequest(chainId: number, recoveryAddress: Address): SignRequestData {
+    return {
+      method: "eth_sendTransaction",
+      chainId,
+      params: [{
+        from: this.address,
+        to: this.address,
+        value: "0x0",
+        data: new SafeContractSuite().addOwnerData(recoveryAddress)
+      }],
+    };
+  }
 }
