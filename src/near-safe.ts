@@ -504,12 +504,14 @@ export class NearSafe {
     return {
       method: "eth_sendTransaction",
       chainId,
-      params: [{
-        from: this.address,
-        to: this.address,
-        value: "0x0",
-        data: new SafeContractSuite().addOwnerData(recoveryAddress)
-      }],
+      params: [
+        {
+          from: this.address,
+          to: this.address,
+          value: "0x0",
+          data: new SafeContractSuite().addOwnerData(recoveryAddress),
+        },
+      ],
     };
   }
 }
