@@ -45,7 +45,7 @@
     "near-api-js": "^5.0.1",
     "near-ca": "^0.7.3",
     "semver": "^7.6.3",
-    "viem": "^2.21.45"
+    "viem": "^2.22.3"
   },
   "devDependencies": {
     "@safe-global/safe-deployments": "^1.37.16",
