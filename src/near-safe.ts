@@ -475,7 +475,7 @@ export class NearSafe {
     const lowerMpc = this.mpcAddress.toLowerCase();
     // We allow zeroAddress (and and treat is as from = safe)
     if (![lowerSafe, lowerMpc, lowerZero].includes(lowerFrom)) {
-      throw new Error(`Unexpected from address ${from}`);
+      throw new Error(`Unexpected from address ${from} - expected {}`);
     }
     return [this.address.toLowerCase(), lowerZero].includes(lowerFrom);
   }
