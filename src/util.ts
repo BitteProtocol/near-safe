@@ -18,11 +18,8 @@ import {
   toBytes,
   keccak256,
   serializeSignature,
-  createPublicClient,
-  http,
 } from "viem";
 
-import { DEFAULT_SETUP_RPC } from "./constants";
 import { PaymasterData, MetaTransaction, UserOperation } from "./types";
 
 export const PLACEHOLDER_SIG = encodePacked(["uint48", "uint48"], [0, 0]);
@@ -67,12 +64,10 @@ export async function isContract(
   return (await getClient(chainId).getCode({ address })) !== undefined;
 }
 
-export function getClient(chainId: number): PublicClient {
-  // TODO(bh2smith): Update defailt client URL in viem for sepolia.
-  if (chainId === 11155111) {
-    return createPublicClient({ transport: http(DEFAULT_SETUP_RPC) });
-  }
-  return Network.fromChainId(chainId).client;
+export function getClient(chainId: number, rpcUrl?: string): PublicClient {
+  // Caution: rpcUrl might not be aligned with chainId!
+  const options = rpcUrl? {rpcUrl}: {};
+  return Network.fromChainId(chainId, options).client;
 }
 
 export function metaTransactionsFromRequest(

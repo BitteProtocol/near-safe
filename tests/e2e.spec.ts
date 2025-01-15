@@ -1,5 +1,5 @@
 import dotenv from "dotenv";
-import { isHex } from "viem";
+import { isHex, zeroAddress } from "viem";
 
 import { DEFAULT_SAFE_SALT_NONCE, NearSafe } from "../src";
 import { decodeTxData } from "../src/decode";
@@ -92,6 +92,23 @@ describe("Near Safe Requests", () => {
         "0x5c395ac0d1ccc0727918d636e8faca7eec2758cc9928c8a8d96e4f58aba453c5",
       evmMessage: typedDataString,
     });
+  });
+
+  it("adapter: encodeEvmTx Uniswap V3", async () => {
+    const chainId = 43114;
+    const request = await adapter.requestRouter({
+      method: "eth_signTypedData_v4",
+      params: [
+        zeroAddress,
+        // eslint-disable-next-line quotes
+        '{"types":{"PermitSingle":[{"name":"details","type":"PermitDetails"},{"name":"spender","type":"address"},{"name":"sigDeadline","type":"uint256"}],"PermitDetails":[{"name":"token","type":"address"},{"name":"amount","type":"uint160"},{"name":"expiration","type":"uint48"},{"name":"nonce","type":"uint48"}],"EIP712Domain":[{"name":"name","type":"string"},{"name":"chainId","type":"uint256"},{"name":"verifyingContract","type":"address"}]},"domain":{"name":"Permit2","chainId": 43114,"verifyingContract":"0x000000000022d473030f116ddee9f6b43ac78ba3"},"primaryType":"PermitSingle","message":{"details":{"token":"0xb97ef9ef8734c71904d8002f8b6bc66dd9c48a6e","amount":"1461501637330902918203684832716283019655932542975","expiration":"1739457501","nonce":"0"},"spender":"0x4dae2f939acf50408e13d58534ff8c2776d45265","sigDeadline":"1736867301"}}',
+      ],
+      chainId,
+    });
+    console.log(request);
+    expect(() =>
+      decodeTxData({ evmMessage: request.evmMessage, chainId })
+    ).not.toThrow();
   });
 
   it("adapter: requestRouter", async () => {
