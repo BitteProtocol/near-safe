@@ -66,7 +66,7 @@ export async function isContract(
 
 export function getClient(chainId: number, rpcUrl?: string): PublicClient {
   // Caution: rpcUrl might not be aligned with chainId!
-  const options = rpcUrl? {rpcUrl}: {};
+  const options = rpcUrl ? { rpcUrl } : {};
   return Network.fromChainId(chainId, options).client;
 }
 
