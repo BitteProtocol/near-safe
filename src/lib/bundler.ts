@@ -144,7 +144,7 @@ export class Erc4337Bundler {
   // New method to query sponsorship policies
   async getSponsorshipPolicies(): Promise<SponsorshipPolicyData[]> {
     const url = `https://api.pimlico.io/v2/account/sponsorship_policies?apikey=${this.apiKey}`;
-    const allPolocies = await handleRequest<SponsorshipPoliciesResponse>(
+    const allPolicies = await handleRequest<SponsorshipPoliciesResponse>(
       async () => {
         const response = await fetch(url);
 
@@ -156,9 +156,7 @@ export class Erc4337Bundler {
         return response.json();
       }
     );
-    return allPolocies.data.filter((p) =>
-      p.chain_ids.allowlist.includes(this.chainId)
-    );
+    return allPolicies.data;
   }
 }
 

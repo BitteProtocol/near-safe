@@ -481,8 +481,10 @@ export class NearSafe {
   }
 
   async policyForChainId(chainId: number): Promise<SponsorshipPolicyData[]> {
-    const bundler = this.bundlerForChainId(chainId);
-    return bundler.getSponsorshipPolicies();
+    // Chain ID doesn't matter for this bundler endpoint.
+    const anyBundler = this.bundlerForChainId(11155111);
+    const allPolicies = await anyBundler.getSponsorshipPolicies();
+    return allPolicies.filter((p) => p.chain_ids.allowlist.includes(chainId));
   }
 
   deploymentRequest(chainId: number): SignRequestData {

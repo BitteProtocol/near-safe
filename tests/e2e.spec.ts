@@ -105,7 +105,6 @@ describe("Near Safe Requests", () => {
       ],
       chainId,
     });
-    console.log(request);
     expect(() =>
       decodeTxData({ evmMessage: request.evmMessage, chainId })
     ).not.toThrow();
