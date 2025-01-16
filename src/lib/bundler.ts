@@ -6,14 +6,11 @@ import {
   PublicClient,
   rpcSchema,
   Transport,
-  RpcError,
-  HttpRequestError,
 } from "viem";
 
 import {
   GasPrices,
   PaymasterData,
-  SponsorshipPoliciesResponse,
   SponsorshipPolicyData,
   UnsignedUserOperation,
   UserOperation,
@@ -21,10 +18,7 @@ import {
   UserOperationReceipt,
 } from "../types";
 import { PLACEHOLDER_SIG } from "../util";
-
-function bundlerUrl(chainId: number, apikey: string): string {
-  return `https://api.pimlico.io/v2/${chainId}/rpc?apikey=${apikey}`;
-}
+import { Pimlico } from "./pimlico";
 
 type SponsorshipPolicy = { sponsorshipPolicyId: string };
 
@@ -61,15 +55,15 @@ type BundlerRpcSchema = [
 export class Erc4337Bundler {
   client: PublicClient<Transport, undefined, undefined, BundlerRpcSchema>;
   entryPointAddress: Address;
-  apiKey: string;
+  pimlico: Pimlico;
   chainId: number;
 
   constructor(entryPointAddress: Address, apiKey: string, chainId: number) {
     this.entryPointAddress = entryPointAddress;
-    this.apiKey = apiKey;
+    this.pimlico = new Pimlico(apiKey);
     this.chainId = chainId;
     this.client = createPublicClient({
-      transport: http(bundlerUrl(chainId, this.apiKey)),
+      transport: http(this.pimlico.bundlerUrl(chainId)),
       rpcSchema: rpcSchema<BundlerRpcSchema>(),
     });
   }
@@ -81,7 +75,7 @@ export class Erc4337Bundler {
     const userOp = { ...rawUserOp, signature: PLACEHOLDER_SIG };
     if (sponsorshipPolicy) {
       console.log("Requesting paymaster data...");
-      return handleRequest<PaymasterData>(() =>
+      return this.pimlico.handleRequest<PaymasterData>(() =>
         this.client.request({
           method: "pm_sponsorUserOperation",
           params: [
@@ -93,7 +87,7 @@ export class Erc4337Bundler {
       );
     }
     console.log("Estimating user operation gas...");
-    return handleRequest<UserOperationGas>(() =>
+    return this.pimlico.handleRequest<UserOperationGas>(() =>
       this.client.request({
         method: "eth_estimateUserOperationGas",
         params: [userOp, this.entryPointAddress],
@@ -102,7 +96,7 @@ export class Erc4337Bundler {
   }
 
   async sendUserOperation(userOp: UserOperation): Promise<Hash> {
-    return handleRequest<Hash>(() =>
+    return this.pimlico.handleRequest<Hash>(() =>
       this.client.request({
         method: "eth_sendUserOperation",
         params: [userOp, this.entryPointAddress],
@@ -112,7 +106,7 @@ export class Erc4337Bundler {
   }
 
   async getGasPrice(): Promise<GasPrices> {
-    return handleRequest<GasPrices>(() =>
+    return this.pimlico.handleRequest<GasPrices>(() =>
       this.client.request({
         method: "pimlico_getUserOperationGasPrice",
         params: [],
@@ -130,62 +124,22 @@ export class Erc4337Bundler {
     return userOpReceipt;
   }
 
+  async getSponsorshipPolicies(): Promise<SponsorshipPolicyData[]> {
+    // Chain ID doesn't matter for this bundler endpoint.
+    const allPolicies = await this.pimlico.getSponsorshipPolicies();
+    return allPolicies.filter((p) =>
+      p.chain_ids.allowlist.includes(this.chainId)
+    );
+  }
+
   private async _getUserOpReceiptInner(
     userOpHash: Hash
   ): Promise<UserOperationReceipt | null> {
-    return handleRequest<UserOperationReceipt | null>(() =>
+    return this.pimlico.handleRequest<UserOperationReceipt | null>(() =>
       this.client.request({
         method: "eth_getUserOperationReceipt",
         params: [userOpHash],
       })
     );
   }
-
-  // New method to query sponsorship policies
-  async getSponsorshipPolicies(): Promise<SponsorshipPolicyData[]> {
-    const url = `https://api.pimlico.io/v2/account/sponsorship_policies?apikey=${this.apiKey}`;
-    const allPolicies = await handleRequest<SponsorshipPoliciesResponse>(
-      async () => {
-        const response = await fetch(url);
-
-        if (!response.ok) {
-          throw new Error(
-            `HTTP error! status: ${response.status}: ${response.statusText}`
-          );
-        }
-        return response.json();
-      }
-    );
-    return allPolicies.data;
-  }
-}
-
-async function handleRequest<T>(clientMethod: () => Promise<T>): Promise<T> {
-  try {
-    return await clientMethod();
-  } catch (error) {
-    const message = stripApiKey(error);
-    if (error instanceof HttpRequestError) {
-      if (error.status === 401) {
-        throw new Error(
-          "Unauthorized request. Please check your Pimlico API key."
-        );
-      } else {
-        throw new Error(`Pimlico: ${message}`);
-      }
-    } else if (error instanceof RpcError) {
-      throw new Error(`Failed to send user op with: ${message}`);
-    }
-    throw new Error(`Bundler Request: ${message}`);
-  }
-}
-
-export function stripApiKey(error: unknown): string {
-  const message = error instanceof Error ? error.message : String(error);
-  return message.replace(/(apikey=)[^\s&]+/, "$1***");
-  // Could also do this with slicing.
-  // const keyStart = message.indexOf("apikey=") + 7;
-  // // If no apikey in the message, return it as is.
-  // if (keyStart === -1) return message;
-  // return `${message.slice(0, keyStart)}***${message.slice(keyStart + 36)}`;
 }
