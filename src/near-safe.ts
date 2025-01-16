@@ -480,9 +480,8 @@ export class NearSafe {
     return [this.address.toLowerCase(), lowerZero].includes(lowerFrom);
   }
 
-  async policyForChainId(chainId: number): Promise<SponsorshipPolicyData[]> {
-    const bundler = this.bundlerForChainId(chainId);
-    return bundler.getSponsorshipPolicies();
+  async policiesForChainId(chainId: number): Promise<SponsorshipPolicyData[]> {
+    return this.bundlerForChainId(chainId).getSponsorshipPolicies();
   }
 
   deploymentRequest(chainId: number): SignRequestData {

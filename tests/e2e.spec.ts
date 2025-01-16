@@ -3,6 +3,7 @@ import { isHex, zeroAddress } from "viem";
 
 import { DEFAULT_SAFE_SALT_NONCE, NearSafe } from "../src";
 import { decodeTxData } from "../src/decode";
+import { Pimlico } from "../src/lib/pimlico";
 
 dotenv.config();
 
@@ -58,8 +59,30 @@ describe("Near Safe Requests", () => {
     ).rejects.toThrow();
   });
 
-  it("bundler: getSponsorshipPolicy", async () => {
-    await expect(adapter.policyForChainId(100)).resolves.not.toThrow();
+  it("pimlico: getSponsorshipPolicies", async () => {
+    const pimlico = new Pimlico(process.env.PIMLICO_KEY!);
+    await expect(pimlico.getSponsorshipPolicies()).resolves.not.toThrow();
+    await expect(
+      pimlico.getSponsorshipPolicyByName("bitte-policy")
+    ).resolves.not.toThrow();
+  });
+
+  it("pimlico: getSponsorshipPolicies failures", async () => {
+    await expect(
+      new Pimlico("Invalid Key").getSponsorshipPolicies()
+    ).rejects.toThrow();
+
+    const pimlico = new Pimlico(process.env.PIMLICO_KEY!);
+    await expect(
+      pimlico.getSponsorshipPolicyByName("poop-policy")
+    ).rejects.toThrow("No policy found with policy_name=");
+    await expect(
+      pimlico.getSponsorshipPolicyById("invalid id")
+    ).rejects.toThrow("No policy found with id=");
+  });
+
+  it("bundler: policiesForChainId", async () => {
+    await expect(adapter.policiesForChainId(100)).resolves.not.toThrow();
   });
 
   it("adapter: encodeEvmTx", async () => {
@@ -105,7 +128,6 @@ describe("Near Safe Requests", () => {
       ],
       chainId,
     });
-    console.log(request);
     expect(() =>
       decodeTxData({ evmMessage: request.evmMessage, chainId })
     ).not.toThrow();
