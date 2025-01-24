@@ -43,11 +43,12 @@
   "dependencies": {
     "@safe-global/safe-gateway-typescript-sdk": "^3.22.6",
     "near-api-js": "^5.0.1",
-    "near-ca": "^0.8.3",
+    "near-ca": "^0.8.4",
     "semver": "^7.6.3",
-    "viem": "^2.22.8"
+    "viem": "^2.22.12"
   },
   "devDependencies": {
+    "@duneanalytics/client-sdk": "^0.2.5",
     "@safe-global/safe-deployments": "^1.37.23",
     "@safe-global/safe-modules-deployments": "^2.2.4",
     "@types/jest": "^29.5.14",
