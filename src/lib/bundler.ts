@@ -74,7 +74,6 @@ export class Erc4337Bundler {
   ): Promise<PaymasterData> {
     const userOp = { ...rawUserOp, signature: PLACEHOLDER_SIG };
     if (sponsorshipPolicy) {
-      console.log("Requesting paymaster data...");
       return this.pimlico.handleRequest<PaymasterData>(() =>
         this.client.request({
           method: "pm_sponsorUserOperation",
@@ -86,7 +85,6 @@ export class Erc4337Bundler {
         })
       );
     }
-    console.log("Estimating user operation gas...");
     return this.pimlico.handleRequest<UserOperationGas>(() =>
       this.client.request({
         method: "eth_estimateUserOperationGas",
