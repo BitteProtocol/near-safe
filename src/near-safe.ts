@@ -65,12 +65,7 @@ export class NearSafe {
 
     const setup = safePack.getSetup([nearAdapter.address]);
     const safeAddress = await safePack.addressForSetup(setup, safeSaltNonce);
-    console.log(`
-      Near Adapter:
-        Near Account ID: ${nearAdapter.nearAccountId()}
-        MPC EOA: ${nearAdapter.address}
-        Safe: ${safeAddress}
-    `);
+
     return new NearSafe(
       nearAdapter,
       safePack,

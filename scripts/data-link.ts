@@ -98,3 +98,8 @@ export async function duneUpload(): Promise<void> {
   });
   console.log(result);
 }
+
+duneUpload().catch((err) => {
+  console.error(err);
+  process.exitCode = 1;
+});
