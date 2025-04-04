@@ -3796,9 +3796,9 @@ near-api-js@^5.0.1:
     node-fetch "2.6.7"
 
 near-ca@^0.9.1:
-  version "0.9.4"
-  resolved "https://registry.yarnpkg.com/near-ca/-/near-ca-0.9.4.tgz#c29f9ea582bd8bdc1b84cfe4280af7fbb0760ceb"
-  integrity sha512-76+p/xaO2tmNVkdTLD5gnzqoutPnkBnW6VIMBQbZWdpiv60gRl278hNS9I3ME4tFXfWWX24vET2iaP3H33Pzow==
+  version "0.9.5"
+  resolved "https://registry.yarnpkg.com/near-ca/-/near-ca-0.9.5.tgz#60c1ba4282eb5ec2ca48b4ffe187fe972e98e067"
+  integrity sha512-4YeGTQWVE5iwVGNRNZcHL5SXcyFLaxXf+sjYJnZRfrgNSAEyNnoonp+OhOGtq4RwnJp3ZRa7Y8FNsam0MwxH5g==
   dependencies:
     "@reown/walletkit" "^1.2.0"
     elliptic "^6.5.6"
