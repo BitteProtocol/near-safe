@@ -42,8 +42,9 @@
   },
   "dependencies": {
     "@safe-global/safe-gateway-typescript-sdk": "^3.22.6",
+    "glob": "^11.0.1",
     "near-api-js": "^5.0.1",
-    "near-ca": "^0.9.1",
+    "near-ca": "^0.9.7",
     "semver": "^7.6.3",
     "viem": "^2.22.12"
   },
