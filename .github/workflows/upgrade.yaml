@@ -1,8 +1,8 @@
-name: Auto Yarn Upgrade
+name: Auto Bun Update
 
 on:
   schedule:
-    # Runs at 00:00 on the first day of every month
+    # Runs at 12 am on the 1th day of every month
     - cron: "0 0 1 * *"
   workflow_dispatch: # This allows manual triggering
 
@@ -21,12 +21,12 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          node-version: "22"
 
       - name: Install and upgrade dependencies
         run: |
-          yarn
-          yarn upgrade
+          bun i
+          bun update
 
       - name: Commit changes
         run: |
@@ -41,5 +41,5 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           commit-message: upgrade dependencies
           branch: auto-upgrade-branch
-          title: "Yarn Upgrade"
-          body: "This PR updates dependencies via `yarn upgrade`"
+          title: "Bun Update"
+          body: "This PR updates dependencies via `bun update`"
