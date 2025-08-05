@@ -29,16 +29,16 @@
     "dist/**/*"
   ],
   "scripts": {
-    "build": "rm -fr dist/* && yarn build:esm && yarn build:cjs",
+    "build": "rm -fr dist/* && bun build:esm && bun build:cjs",
     "build:esm": "tsc -p tsconfig.esm.json",
     "build:cjs": "tsc -p tsconfig.cjs.json",
     "build:deployments": "tsx scripts/safe-deployments.ts && prettier --write 'src/_gen/**/*.ts'",
-    "start": "yarn example",
+    "start": "bun example",
     "example": "tsx examples/send-tx.ts",
     "lint": "prettier --check '{src,examples,tests}/**/*.{js,jsx,ts,tsx}' && eslint . --ignore-pattern dist/",
-    "fmt": "prettier --write '{src,examples,tests}/**/*.{js,jsx,ts,tsx}' && yarn lint --fix",
+    "fmt": "prettier --write '{src,examples,tests}/**/*.{js,jsx,ts,tsx}' && bun lint --fix",
     "test": "jest",
-    "all": "yarn fmt && yarn lint && yarn build"
+    "all": "bun fmt && bun lint && bun build"
   },
   "dependencies": {
     "@safe-global/safe-gateway-typescript-sdk": "^3.22.6",

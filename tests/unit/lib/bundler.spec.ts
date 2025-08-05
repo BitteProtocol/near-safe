@@ -9,7 +9,7 @@ describe("Safe Pack", () => {
       "invalid API key",
       11155111
     );
-    await expect(() => unauthorizedBundler.getGasPrice()).rejects.toThrow(
+    await expect(unauthorizedBundler.getGasPrice()).rejects.toThrow(
       "Unauthorized request. Please check your Pimlico API key."
     );
   });
