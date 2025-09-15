@@ -46,14 +46,14 @@
     "near-api-js": "^6.3.0",
     "near-ca": "^0.11.2",
     "semver": "^7.7.2",
-    "viem": "^2.37.5"
+    "viem": "^2.37.6"
   },
   "devDependencies": {
     "@duneanalytics/client-sdk": "^0.2.5",
     "@safe-global/safe-deployments": "^1.37.44",
     "@safe-global/safe-modules-deployments": "^2.2.15",
     "@types/jest": "^30.0.0",
-    "@types/node": "^24.3.1",
+    "@types/node": "^24.4.0",
     "@types/semver": "^7.7.1",
     "@types/yargs": "^17.0.33",
     "@typescript-eslint/eslint-plugin": "^8.43.0",
