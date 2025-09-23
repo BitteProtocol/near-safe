@@ -8,6 +8,7 @@ import {
   requestRouter as mpcRequestRouter,
   EncodedSignRequest,
   EthTransactionParams,
+  Network,
   SetupConfig as MpcConfig,
 } from "near-ca";
 import { Address, Hash, Hex, zeroAddress } from "viem";
@@ -26,7 +27,6 @@ import {
 } from "./types";
 import {
   assertUnique,
-  getClient,
   isContract,
   metaTransactionsFromRequest,
   packSignature,
@@ -128,7 +128,9 @@ export class NearSafe {
    * @returns {Promise<bigint>} - A promise that resolves to the balance of the Safe account in wei.
    */
   async getBalance(chainId: number): Promise<bigint> {
-    return await getClient(chainId).getBalance({ address: this.address });
+    return await Network.fromChainId(chainId).client.getBalance({
+      address: this.address,
+    });
   }
 
   /**

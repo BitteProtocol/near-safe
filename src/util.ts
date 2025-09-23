@@ -11,7 +11,6 @@ import {
   concatHex,
   encodePacked,
   toHex,
-  PublicClient,
   isHex,
   parseTransaction,
   zeroAddress,
@@ -61,13 +60,10 @@ export async function isContract(
   address: Address,
   chainId: number
 ): Promise<boolean> {
-  return (await getClient(chainId).getCode({ address })) !== undefined;
-}
-
-export function getClient(chainId: number, rpcUrl?: string): PublicClient {
-  // Caution: rpcUrl might not be aligned with chainId!
-  const options = rpcUrl ? { rpcUrl } : {};
-  return Network.fromChainId(chainId, options).client;
+  return (
+    (await Network.fromChainId(chainId).client.getCode({ address })) !==
+    undefined
+  );
 }
 
 export function metaTransactionsFromRequest(

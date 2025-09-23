@@ -1,3 +1,4 @@
+import { Network } from "near-ca";
 import {
   Address,
   concat,
@@ -29,12 +30,7 @@ import {
   UnsignedUserOperation,
   UserOperation,
 } from "../types";
-import {
-  PLACEHOLDER_SIG,
-  getClient,
-  packGas,
-  packPaymasterData,
-} from "../util";
+import { PLACEHOLDER_SIG, packGas, packPaymasterData } from "../util";
 
 /**
  * All contracts used in account creation & execution
@@ -142,7 +138,7 @@ export class SafeContractSuite {
       maxPriorityFeePerGas,
       maxFeePerGas,
     } = unsignedUserOp;
-    const client = await getClient(chainId);
+    const client = await Network.fromChainId(chainId).client;
     const opHash = await client.readContract({
       address: this.m4337.address,
       abi: this.m4337.abi,
@@ -213,7 +209,7 @@ export class SafeContractSuite {
   }
 
   async getNonce(address: Address, chainId: number): Promise<bigint> {
-    const nonce = (await getClient(chainId).readContract({
+    const nonce = (await Network.fromChainId(chainId).client.readContract({
       abi: this.entryPoint.abi,
       address: this.entryPoint.address,
       functionName: "getNonce",
@@ -227,7 +223,7 @@ export class SafeContractSuite {
     safeAddress: Address,
     owner: Address
   ): Promise<Address> {
-    const client = getClient(chainId);
+    const client = Network.fromChainId(chainId).client;
     const currentOwners = await client.readContract({
       address: safeAddress,
       // abi: this.singleton.abi,
