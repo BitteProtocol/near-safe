@@ -45,20 +45,20 @@
     "near-api-js": "^6.4.0",
     "near-ca": "0.12.1",
     "semver": "^7.7.3",
-    "viem": "^2.38.5"
+    "viem": "^2.38.6"
   },
   "devDependencies": {
     "@duneanalytics/client-sdk": "^0.2.5",
     "@safe-global/safe-deployments": "^1.37.47",
     "@safe-global/safe-modules-deployments": "^2.2.18",
     "@types/jest": "^30.0.0",
-    "@types/node": "^24.9.1",
+    "@types/node": "^24.9.2",
     "@types/semver": "^7.7.1",
     "@types/yargs": "^17.0.34",
     "@typescript-eslint/eslint-plugin": "^8.46.2",
     "@typescript-eslint/parser": "^8.46.2",
     "dotenv": "^17.2.3",
-    "eslint": "^9.38.0",
+    "eslint": "^9.39.0",
     "eslint-plugin-import": "^2.32.0",
     "prettier": "^3.6.2",
     "tsx": "^4.20.6",
